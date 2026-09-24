@@ -1,0 +1,46 @@
+[ 1/40] tok   432 notes  4 | base ok notes x  mass 1.000   2.8s  <- notes BROKE
+--- first notes --- check if the | check if it | check node- | check if the
+[ 2/40] tok   176 notes  2 | base ok notes ok mass 1.000   1.5s
+[ 3/40] tok  2561 notes 20 | base ok notes ok mass 1.000  13.9s
+[ 4/40] tok   282 notes  3 | base x  notes x  mass 0.999   2.0s
+[ 5/40] tok   336 notes  3 | base ok notes ok mass 1.000   2.1s
+[ 6/40] tok   334 notes  3 | base ok notes ok mass 0.999   2.1s
+[ 7/40] tok   457 notes  4 | base ok notes ok mass 1.000   3.1s
+[ 8/40] tok   404 notes  4 | base ok notes ok mass 0.995   2.6s
+[ 9/40] tok  2561 notes 20 | base ok notes ok mass 1.000  14.3s
+[10/40] tok  2462 notes 20 | base ok notes ok mass 1.000  14.1s
+[11/40] tok   154 notes  2 | base ok notes ok mass 1.000   1.3s
+[12/40] tok  2617 notes 21 | base ok notes ok mass 1.000  14.9s
+[13/40] tok    96 notes  0 | base ok notes ok mass 1.000   0.3s
+[14/40] tok   787 notes  7 | base x  notes x  mass 1.000   4.7s
+[15/40] tok  2423 notes 19 | base x  notes x  mass 1.000  14.0s
+[16/40] tok   394 notes  4 | base x  notes x  mass 1.000   2.6s
+[17/40] tok  2589 notes 21 | base ok notes ok mass 1.000  14.9s
+[18/40] tok  2345 notes 19 | base ok notes ok mass 1.000  13.6s
+[19/40] tok   694 notes  6 | base x  notes x  mass 1.000   4.5s
+[20/40] tok   166 notes  2 | base ok notes ok mass 1.000   1.3s
+[21/40] tok   132 notes  2 | base x  notes x  mass 1.000   1.3s
+[22/40] tok  3628 notes 29 | base ok notes ok mass 1.000  22.3s
+[23/40] tok   233 notes  2 | base ok notes ok mass 0.999   1.6s
+[24/40] tok   677 notes  6 | base x  notes x  mass 1.000   4.5s
+[25/40] tok  1867 notes 15 | base ok notes ok mass 0.999  10.9s
+[26/40] tok   234 notes  2 | base ok notes ok mass 1.000   1.4s
+[27/40] tok   404 notes  4 | base x  notes x  mass 1.000   2.7s
+[28/40] tok  3360 notes 26 | base ok notes ok mass 1.000  19.8s
+[29/40] tok   169 notes  2 | base ok notes ok mass 1.000   1.7s
+[30/40] tok  2184 notes 17 | base x  notes x  mass 1.000  12.6s
+[31/40] tok   124 notes  0 | base ok notes ok mass 1.000   0.4s
+[32/40] tok   130 notes  2 | base ok notes ok mass 1.000   1.2s
+[33/40] tok  2380 notes 19 | base x  notes x  mass 1.000  14.3s
+[34/40] tok   258 notes  3 | base x  notes x  mass 0.999   1.9s
+[35/40] tok  2509 notes 20 | base x  notes x  mass 1.000  14.6s
+[36/40] tok   197 notes  2 | base ok notes ok mass 1.000   1.6s
+[37/40] tok   153 notes  2 | base ok notes ok mass 0.999   1.3s
+[38/40] tok  2557 notes 20 | base x  notes x  mass 1.000  14.3s
+[39/40] tok  2248 notes 18 | base ok notes ok mass 0.999  12.8s
+[40/40] tok   187 notes  2 | base ok notes ok mass 1.000   1.7s
+
+states that got notes: 38/40
+arm     acc    mass_mean mass_min  sec/item
+base   0.675  0.9998   0.9967  2.13
+notes  0.650  0.9997   0.9950  6.84

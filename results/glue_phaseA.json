@@ -1,0 +1,371 @@
+[
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.88,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.8329,
+  "pred_distribution": {
+   "negative": 82,
+   "positive": 118
+  },
+  "seconds": 6.4,
+  "ms_per_example": 31.99,
+  "mean_prompt_tokens": 68.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.855,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7941,
+  "pred_distribution": {
+   "negative": 75,
+   "positive": 125
+  },
+  "seconds": 6.46,
+  "ms_per_example": 32.31,
+  "mean_prompt_tokens": 68.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.905,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7771,
+  "pred_distribution": {
+   "negative": 91,
+   "positive": 109
+  },
+  "seconds": 4.6,
+  "ms_per_example": 23.01,
+  "mean_prompt_tokens": 39.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.895,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.8356,
+  "pred_distribution": {
+   "negative": 105,
+   "positive": 95
+  },
+  "seconds": 4.57,
+  "ms_per_example": 22.86,
+  "mean_prompt_tokens": 39.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.66,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.7697,
+  "pred_distribution": {
+   "yes": 56,
+   "no": 144
+  },
+  "seconds": 10.05,
+  "ms_per_example": 50.24,
+  "mean_prompt_tokens": 121.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.72,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.7483,
+  "pred_distribution": {
+   "yes": 116,
+   "no": 84
+  },
+  "seconds": 9.87,
+  "ms_per_example": 49.35,
+  "mean_prompt_tokens": 121.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.66,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.5866,
+  "pred_distribution": {
+   "yes": 66,
+   "no": 134
+  },
+  "seconds": 8.21,
+  "ms_per_example": 41.06,
+  "mean_prompt_tokens": 92.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "mrpc",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.515,
+  "majority_baseline": 0.65,
+  "mean_margin": 0.7812,
+  "pred_distribution": {
+   "no": 147,
+   "yes": 53
+  },
+  "seconds": 9.17,
+  "ms_per_example": 45.84,
+  "mean_prompt_tokens": 110.7,
+  "f1": 0.4699,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "mrpc",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.54,
+  "majority_baseline": 0.65,
+  "mean_margin": 0.7217,
+  "pred_distribution": {
+   "no": 142,
+   "yes": 58
+  },
+  "seconds": 9.29,
+  "ms_per_example": 46.46,
+  "mean_prompt_tokens": 110.7,
+  "f1": 0.5106,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "mrpc",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.53,
+  "majority_baseline": 0.65,
+  "mean_margin": 0.4949,
+  "pred_distribution": {
+   "no": 148,
+   "yes": 52
+  },
+  "seconds": 7.43,
+  "ms_per_example": 37.14,
+  "mean_prompt_tokens": 81.7,
+  "f1": 0.4835,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "mrpc",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.545,
+  "majority_baseline": 0.65,
+  "mean_margin": 0.4292,
+  "pred_distribution": {
+   "no": 125,
+   "yes": 75
+  },
+  "seconds": 7.41,
+  "ms_per_example": 37.06,
+  "mean_prompt_tokens": 81.7,
+  "f1": 0.5561,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "qnli",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.73,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.5953,
+  "pred_distribution": {
+   "yes": 86,
+   "no": 114
+  },
+  "seconds": 8.52,
+  "ms_per_example": 42.62,
+  "mean_prompt_tokens": 100.8,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "qnli",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.725,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.6004,
+  "pred_distribution": {
+   "yes": 85,
+   "no": 115
+  },
+  "seconds": 8.63,
+  "ms_per_example": 43.15,
+  "mean_prompt_tokens": 100.8,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "qnli",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.7,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.6182,
+  "pred_distribution": {
+   "yes": 64,
+   "no": 136
+  },
+  "seconds": 6.77,
+  "ms_per_example": 33.83,
+  "mean_prompt_tokens": 71.8,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "qnli",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.62,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7063,
+  "pred_distribution": {
+   "yes": 36,
+   "no": 164
+  },
+  "seconds": 6.86,
+  "ms_per_example": 34.28,
+  "mean_prompt_tokens": 71.8,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "cola",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.625,
+  "majority_baseline": 0.685,
+  "mean_margin": 0.5213,
+  "pred_distribution": {
+   "no": 18,
+   "yes": 182
+  },
+  "seconds": 5.49,
+  "ms_per_example": 27.44,
+  "mean_prompt_tokens": 56.6,
+  "matthews": -0.1004,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "cola",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.665,
+  "majority_baseline": 0.685,
+  "mean_margin": 0.7167,
+  "pred_distribution": {
+   "no": 6,
+   "yes": 194
+  },
+  "seconds": 5.51,
+  "ms_per_example": 27.54,
+  "mean_prompt_tokens": 56.6,
+  "matthews": -0.0562,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "cola",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.61,
+  "majority_baseline": 0.685,
+  "mean_margin": 0.2632,
+  "pred_distribution": {
+   "no": 69,
+   "yes": 131
+  },
+  "seconds": 3.58,
+  "ms_per_example": 17.92,
+  "mean_prompt_tokens": 27.6,
+  "matthews": 0.1192,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "cola",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.635,
+  "majority_baseline": 0.685,
+  "mean_margin": 0.3121,
+  "pred_distribution": {
+   "no": 50,
+   "yes": 150
+  },
+  "seconds": 3.63,
+  "ms_per_example": 18.13,
+  "mean_prompt_tokens": 27.6,
+  "matthews": 0.1056,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ }
+]

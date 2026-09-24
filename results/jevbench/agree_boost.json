@@ -1,0 +1,32 @@
+{
+ "1.0 (primary alone)": {
+  "ece": 0.298,
+  "calibration": 40.4,
+  "score": 66.1
+ },
+ "1.5": {
+  "ece": 0.295,
+  "calibration": 40.9,
+  "score": 64.1
+ },
+ "2": {
+  "ece": 0.303,
+  "calibration": 39.4,
+  "score": 63.5
+ },
+ "3": {
+  "ece": 0.285,
+  "calibration": 43.0,
+  "score": 65.0
+ },
+ "5": {
+  "ece": 0.274,
+  "calibration": 45.2,
+  "score": 65.8
+ },
+ "8": {
+  "ece": 0.322,
+  "calibration": 35.6,
+  "score": 61.9
+ }
+}

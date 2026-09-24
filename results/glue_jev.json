@@ -1,0 +1,42 @@
+{
+ "sst2": {
+  "n": 150,
+  "accuracy": 0.94,
+  "majority": 0.54,
+  "mean_p": 0.444,
+  "p50_ms": 255,
+  "cost_usd": 0.00207
+ },
+ "rte": {
+  "n": 150,
+  "accuracy": 0.92,
+  "majority": 0.5533,
+  "mean_p": 0.484,
+  "p50_ms": 277,
+  "cost_usd": 0.00243
+ },
+ "mrpc": {
+  "n": 150,
+  "accuracy": 0.7067,
+  "majority": 0.6067,
+  "mean_p": 0.466,
+  "p50_ms": 288,
+  "cost_usd": 0.00234
+ },
+ "qnli": {
+  "n": 150,
+  "accuracy": 0.9267,
+  "majority": 0.5067,
+  "mean_p": 0.54,
+  "p50_ms": 270,
+  "cost_usd": 0.00228
+ },
+ "cola": {
+  "n": 150,
+  "accuracy": 0.82,
+  "majority": 0.6733,
+  "mean_p": 0.703,
+  "p50_ms": 296,
+  "cost_usd": 0.002
+ }
+}

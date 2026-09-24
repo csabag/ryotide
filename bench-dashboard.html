@@ -1,0 +1,393 @@
+<title>Jev Classifier Benchmarks</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root{
+  --ground:#f6f7f8; --surface:#ffffff; --surface-2:#eceef1; --sunken:#e4e7ea;
+  --ink:#16191c; --ink-2:#555e67; --ink-3:#848d96; --rule:#dde1e5;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a;
+  --good:#14804a; --bad:#c0342f; --warn:#a86600;
+  --pos:#184f95; --neg:#a8302c; --mid:#eceef1;
+  --hatch:rgba(168,48,44,.34);
+  --shadow:0 1px 2px rgba(16,20,26,.06),0 4px 14px rgba(16,20,26,.05);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --ground:#131619; --surface:#1a1e22; --surface-2:#23282e; --sunken:#0f1215;
+  --ink:#f1f4f6; --ink-2:#a6aeb6; --ink-3:#79818a; --rule:#2b3138;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --good:#3fbf7f; --bad:#f07a76; --warn:#d99a1f;
+  --pos:#5598e7; --neg:#e34948; --mid:#23282e;
+  --hatch:rgba(240,122,118,.38);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.28);
+}}
+:root[data-theme="dark"]{
+  --ground:#131619; --surface:#1a1e22; --surface-2:#23282e; --sunken:#0f1215;
+  --ink:#f1f4f6; --ink-2:#a6aeb6; --ink-3:#79818a; --rule:#2b3138;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70;
+  --good:#3fbf7f; --bad:#f07a76; --warn:#d99a1f;
+  --pos:#5598e7; --neg:#e34948; --mid:#23282e;
+  --hatch:rgba(240,122,118,.38);
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.28);
+}
+*{box-sizing:border-box}
+a{color:var(--s1);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;}
+a:hover{color:var(--ink);}
+body{background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:20px;padding-block:40px 64px;}
+.mono{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,monospace;font-variant-numeric:tabular-nums;}
+h1{font-size:30px;line-height:1.15;font-weight:600;letter-spacing:-.02em;margin:0;text-wrap:balance;}
+h2{font-size:17px;font-weight:600;letter-spacing:-.01em;margin:0;}
+p{margin:0;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;}
+.lede{color:var(--ink-2);max-width:66ch;margin-top:10px;}
+
+header{border-bottom:1px solid var(--rule);padding-bottom:22px;margin-bottom:28px;}
+.rig{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px;}
+.chip{font-size:11.5px;padding:3px 9px;border:1px solid var(--rule);border-radius:3px;
+  background:var(--surface);color:var(--ink-2);font-family:"IBM Plex Mono",monospace;}
+.chip b{color:var(--ink);font-weight:600;}
+
+section{margin-top:40px;}
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:6px;}
+.note{color:var(--ink-2);font-size:13px;max-width:72ch;margin-bottom:16px;}
+
+/* stat tiles */
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));gap:1px;
+  background:var(--rule);border:1px solid var(--rule);border-radius:5px;overflow:hidden;}
+.tile{background:var(--surface);padding:15px 16px 14px;display:flex;flex-direction:column;gap:3px;}
+.tile .k{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;}
+.tile .v{font-size:25px;font-weight:600;letter-spacing:-.02em;line-height:1.1;}
+.tile .v small{font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:0;}
+.tile .s{font-size:12px;color:var(--ink-2);}
+
+/* matrix */
+.scroller{overflow-x:auto;border:1px solid var(--rule);border-radius:5px;background:var(--surface);}
+table{border-collapse:collapse;width:100%;min-width:640px;}
+th,td{text-align:right;padding:0;}
+thead th{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;padding:11px 12px 9px;border-bottom:1px solid var(--rule);white-space:nowrap;}
+thead th.lbl{text-align:left;}
+tbody th{text-align:left;padding:0 14px;font-weight:600;font-size:13px;white-space:nowrap;
+  border-right:1px solid var(--rule);background:var(--surface);}
+tbody th .base{display:block;font-size:10.5px;font-weight:400;color:var(--ink-3);
+  font-family:"IBM Plex Mono",monospace;letter-spacing:.02em;}
+tbody tr+tr th,tbody tr+tr td{border-top:1px solid var(--rule);}
+.cell{position:relative;padding:9px 12px;line-height:1.25;min-width:96px;}
+.cell .a{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:16px;font-weight:600;display:block;}
+.cell .d{font-family:"IBM Plex Mono",monospace;font-size:10.5px;display:block;opacity:.82;}
+.cell.under::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(135deg,transparent 0 5px,var(--hatch) 5px 7px);}
+.cell.na{color:var(--ink-3);font-style:italic;font-size:12px;}
+.grp{border-left:1px solid var(--rule);}
+tbody th.mdl{font-size:12px;}
+tbody th.mdl span{display:block;font-weight:400;color:var(--ink-3);font-size:10.5px;
+  font-family:"IBM Plex Mono",monospace;}
+
+/* legend */
+.legend{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:12px;
+  font-size:11.5px;color:var(--ink-2);font-family:"IBM Plex Mono",monospace;}
+.ramp{display:flex;align-items:center;gap:0;}
+.ramp i{width:24px;height:11px;display:block;}
+.lk{display:inline-flex;align-items:center;gap:6px;}
+.lk .sw{width:11px;height:11px;border-radius:2px;display:inline-block;}
+.lk .hx{width:14px;height:11px;display:inline-block;border:1px solid var(--rule);
+  background:repeating-linear-gradient(135deg,transparent 0 4px,var(--hatch) 4px 6px);}
+
+/* bars */
+.bars{border:1px solid var(--rule);border-radius:5px;background:var(--surface);padding:16px 18px 14px;}
+.brow{display:grid;grid-template-columns:52px 1fr;gap:12px;align-items:center;padding:7px 0;}
+.brow+.brow{border-top:1px solid var(--rule);}
+.brow .n{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--ink-2);text-align:right;}
+.stack{display:flex;flex-direction:column;gap:4px;}
+.bline{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;}
+.track{height:13px;background:var(--sunken);border-radius:2px;overflow:hidden;}
+.fill{height:100%;border-radius:0 2px 2px 0;}
+.bval{font-family:"IBM Plex Mono",monospace;font-size:11.5px;color:var(--ink-2);min-width:74px;text-align:right;}
+
+.two{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+@media (max-width:780px){.two{grid-template-columns:1fr;}}
+
+figure{margin:0;border:1px solid var(--rule);border-radius:5px;background:var(--surface);padding:16px 18px;}
+figcaption{font-size:12px;color:var(--ink-2);margin-top:10px;}
+svg{display:block;width:100%;height:auto;max-width:100%;}
+
+.callout{border:1px solid var(--rule);border-left:3px solid var(--s2);border-radius:4px;
+  background:var(--surface);padding:14px 16px;margin-top:16px;}
+.callout .h{font-weight:600;font-size:13px;margin-bottom:4px;}
+.callout p{color:var(--ink-2);font-size:13px;max-width:74ch;}
+
+ul.open{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:1px;background:var(--rule);
+  border:1px solid var(--rule);border-radius:5px;overflow:hidden;}
+ul.open li{background:var(--surface);padding:12px 15px;display:grid;grid-template-columns:82px 1fr;gap:14px;align-items:start;}
+@media (max-width:560px){ul.open li{grid-template-columns:1fr;gap:4px;}}
+.st{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;
+  padding:2px 0;font-weight:600;}
+.st.ok{color:var(--good);} .st.open{color:var(--warn);}
+ul.open li p{font-size:13px;color:var(--ink-2);}
+ul.open li b{color:var(--ink);font-weight:600;}
+
+footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--rule);color:var(--ink-3);font-size:12px;max-width:74ch;}
+
+.board{border:1px solid var(--rule);border-radius:5px;background:var(--surface);padding:6px 18px 14px;}
+.brk{display:grid;grid-template-columns:minmax(120px,190px) 1fr 44px;gap:12px;align-items:center;padding:6px 0;}
+.brk+.brk{border-top:1px solid var(--rule);}
+.brk .who{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.brk .who span{color:var(--ink-3);font-size:10.5px;font-family:"IBM Plex Mono",monospace;display:block;}
+.brk.us .who{font-weight:600;}
+.brk .sc{font-family:"IBM Plex Mono",monospace;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;}
+.brk.us .sc{font-weight:600;color:var(--s2);}
+.axg{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--rule);
+  border:1px solid var(--rule);border-radius:5px;overflow:hidden;}
+.axc{background:var(--surface);padding:13px 15px;}
+.axc .t{font-size:12px;font-weight:600;margin-bottom:9px;}
+.axc .t em{font-style:normal;color:var(--ink-3);font-weight:400;font-family:"IBM Plex Mono",monospace;font-size:10.5px;display:block;}
+.axr{display:grid;grid-template-columns:62px 1fr 34px;gap:7px;align-items:center;padding:2.5px 0;
+  font-family:"IBM Plex Mono",monospace;font-size:10.5px;color:var(--ink-2);}
+.axr .tr{height:7px;background:var(--sunken);border-radius:1px;overflow:hidden;}
+.axr .fi{height:100%;}
+.axr .vv{text-align:right;color:var(--ink);}
+.axc .fin{margin-top:9px;padding-top:9px;border-top:1px solid var(--rule);display:flex;justify-content:space-between;align-items:baseline;}
+.axc .fin b{font-family:"IBM Plex Mono",monospace;font-size:19px;font-weight:600;}
+.axc .fin span{font-size:10.5px;color:var(--ink-3);font-family:"IBM Plex Mono",monospace;}
+#tip{position:fixed;z-index:50;pointer-events:none;opacity:0;transition:opacity .1s;
+  background:var(--ink);color:var(--ground);padding:8px 10px;border-radius:4px;font-size:11.5px;
+  font-family:"IBM Plex Mono",monospace;line-height:1.55;box-shadow:var(--shadow);max-width:250px;}
+#tip b{color:var(--ground);}
+:focus-visible{outline:2px solid var(--s1);outline-offset:2px;}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;}}
+</style>
+
+<div class="wrap">
+<header>
+  <p class="eyebrow">JevBench v1.3 public subset &middot; 30+ runs &middot; 5 model families</p>
+  <h1>Reading a local LLM as a typed decision model</h1>
+  <p class="lede">One forward pass, logits at a single position masked to a fixed label set &mdash; no decoding.
+  Thirty-plus configurations across Qwen2.5, Qwen3, Qwen3.5, Gemma 4 and gpt-oss, measured on 231 public decisions with
+  <a href="https://github.com/fstandhartinger/jevbench">JevBench</a>&rsquo;s own runner and scorer. Our adapter only.</p>
+  <div class="rig">
+    <span class="chip"><b>Mac16,10</b> base M4 &mdash; not Pro</span>
+    <span class="chip">24 GB unified</span>
+    <span class="chip">MLX</span>
+    <span class="chip">231 / 534 decisions <b>public</b></span>
+    <span class="chip">judge tier <b>held out</b></span>
+  </div>
+</header>
+
+<section style="margin-top:0"><div class="tiles" id="tiles"></div></section>
+
+<section>
+  <div class="shead"><h2>The whole board, matched tiers</h2><span class="eyebrow">ours highlighted</span></div>
+  <p class="note">Published systems are recomputed on the three tiers we ran, using the harness&rsquo;s own
+  renormalising scorer. <b>Intelligence</b> is accuracy above each tier&rsquo;s guessing baseline; <b>hard-&Delta;</b>
+  is how far a system beats the positional heuristic explained below. Latency is not comparable across the
+  <span class="mono">host</span> column &mdash; API rows are production endpoints, self-hosted rows take a
+  &times;2&nbsp;+&nbsp;0.15&nbsp;s load penalty, and ours run on a consumer Mac mini.</p>
+  <div class="scroller"><table id="board"></table></div>
+</section>
+
+<section>
+  <div class="shead"><h2>How much of the hard tier is just guessing position?</h2>
+    <span class="eyebrow">111 items</span></div>
+  <p class="note">Correct answers are not uniformly placed: <b>41.4% of hard items have their answer at
+  index&nbsp;1</b> (option B). So &ldquo;always pick B&rdquo; scores 0.414 while reading nothing at all, against a
+  0.336 chance baseline. Measured against that floor, most of our models are doing no work on the hard tier.</p>
+  <div class="scroller"><table id="pos"></table></div>
+  <div class="callout">
+    <p class="h">Two of our models score exactly the positional baseline</p>
+    <p>Qwen2.5-1.5B and Qwen3.5-2B both land on 0.414 &mdash; precisely what a system that ignores the state
+    achieves. The 0.5B looks better at 0.477 only because it picks option&nbsp;B <b>67%</b> of the time against a
+    41% base rate, so its bias pays a dividend the benchmark did not intend. Only Qwen3.5-4B (+0.190) and
+    Gemma&nbsp;4&nbsp;E4B (+0.181) genuinely read the document &mdash; and the 4B is the <i>least</i>
+    position-biased model we ran, picking index&nbsp;1 just 32% of the time.</p>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><h2>Knowing when to answer</h2><span class="eyebrow">risk&ndash;coverage</span></div>
+  <p class="note">Accuracy rises monotonically with confidence on every model, and never drops below chance &mdash;
+  so inverting low-confidence answers strictly loses. Deferring them does not. AURC is the area under the
+  risk&ndash;coverage curve; lower is better.</p>
+  <figure><div id="rc"></div>
+    <figcaption>Selective accuracy against coverage. Cutting the least-confident 50% of decisions takes
+    Qwen3.5-4B from 0.758 to 0.983.</figcaption>
+  </figure>
+  <div class="scroller" style="margin-top:16px"><table id="sel"></table></div>
+</section>
+
+<section>
+  <div class="shead"><h2>Branch strategy at a 6K-token state</h2><span class="eyebrow">KV retained &middot; MB</span></div>
+  <p class="note">The cache machinery underneath. All three strategies return identical labels at every N;
+  they differ only in what stays resident. Note that JevBench cannot reward this &mdash; it asks
+  <b>one question per state</b>, so the shared-prefix amortisation never pays here, while the spec&rsquo;s real
+  workload (one 6K state, many questions) is exactly where it would.</p>
+  <div class="two"><div class="bars" id="mem"></div><div class="bars" id="speed"></div></div>
+  <div class="legend">
+    <span class="lk"><i class="sw" style="background:var(--s1)"></i> trim</span>
+    <span class="lk"><i class="sw" style="background:var(--s2)"></i> fork</span>
+    <span class="lk"><i class="sw" style="background:var(--s3)"></i> lazy</span>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><h2>What we learned the hard way</h2></div>
+  <ul class="open" id="risks"></ul>
+</section>
+
+<footer>
+  <p><b>Read before quoting any number.</b> This is a public-subset score, not a board submission: 231 of 534
+  decisions are public, and the judge tier (146 items, 28% of the intelligence weight) is held out and
+  renormalised away. Calibration scores on ECE alone, since the gold distributions ship only with the held-out
+  set. Cost uses our own energy estimate (30&nbsp;W at $0.30/kWh); the board estimates local weights by size
+  class and is more conservative. Latency is measured on a consumer Mac mini running a desktop OS &mdash; the
+  p95 tail is structural (95.8% of a long prompt is state text, and a 3.9K-token prefill genuinely costs ~9&nbsp;s
+  at 120&nbsp;GB/s), not background noise. Granting a perfect p95 would move our best score 73.5 &rarr; 76.2,
+  against a 17.5-point capability gap.</p>
+</footer>
+</div>
+<div id="tip" role="status"></div>
+
+<script>
+const D={"rows":[{"n":"Jev 1.13.0","us":0,"i":83.1,"e":1.0,"s":0.9895833333333334,"h":0.740909090909091,"p50":0.6524335257709026,"p95":0.7221905551850795,"sp":83.3,"cal":82.7,"pub":74.4,"api":true,"aurc":null,"hb":null},{"n":"SimpleJev 27B","us":0,"i":82.5,"e":1.0,"s":0.96875,"h":0.75,"p50":1.0138170085847378,"p95":1.8794299442321063,"sp":71.2,"cal":81.1,"pub":66.3,"api":false,"aurc":null,"hb":null},{"n":"djev 26B-A4B","us":0,"i":79.7,"e":1.0,"s":0.9791666666666666,"h":0.6954545454545454,"p50":0.2370578795671463,"p95":0.30865143015980717,"sp":91.4,"cal":65.4,"pub":73.0,"api":true,"aurc":null,"hb":null},{"n":"Gemma 4 E4B +rep","us":1,"i":75.0,"e":1.0,"s":0.9583333333333334,"h":0.6396396396396397,"p50":0.438,"p95":4.74,"sp":70.0,"cal":44.2,"pub":66.7,"api":false,"aurc":0.053,"hb":0.64,"cov":{"0.85":0.8961038961038961,"0.9":0.7142857142857143,"0.95":0.6060606060606061},"rc":[[1.0,0.814],[0.9,0.846],[0.8,0.876],[0.7,0.907],[0.6,0.95],[0.5,0.974],[0.4,1.0],[0.3,1.0]],"ece":0.279},{"n":"reflex 4B","us":0,"i":73.9,"e":1.0,"s":0.9479166666666666,"h":0.6318181818181818,"p50":1.7996779419481754,"p95":2.0541166696697473,"sp":68.0,"cal":75.2,"pub":70.3,"api":false,"aurc":null,"hb":null},{"n":"SemIf (Qwen3.5-4B)","us":0,"i":73.4,"e":1.0,"s":0.9791666666666666,"h":0.5954545454545455,"p50":0.19796114787459373,"p95":0.3153164997696876,"sp":83.7,"cal":72.6,"pub":73.1,"api":false,"aurc":null,"hb":null},{"n":"Qwen3.5-4B +rep","us":1,"i":70.3,"e":1.0,"s":0.875,"h":0.6396396396396397,"p50":0.669,"p95":7.641,"sp":66.4,"cal":83.2,"pub":74.5,"api":false,"aurc":0.065,"hb":0.64,"cov":{"0.85":0.8528138528138528,"0.9":0.7186147186147186,"0.95":0.5194805194805194},"rc":[[1.0,0.788],[0.9,0.822],[0.8,0.87],[0.7,0.907],[0.6,0.935],[0.5,0.965],[0.4,0.978],[0.3,0.986]],"ece":0.084},{"n":"Open-Jev 9B","us":0,"i":70.1,"e":1.0,"s":0.90625,"h":0.6090909090909091,"p50":0.754859171807766,"p95":1.8114654466509819,"sp":72.0,"cal":63.3,"pub":55.0,"api":false,"aurc":null,"hb":null},{"n":"Qwen3.5-9B","us":1,"i":69.5,"e":1.0,"s":0.9305555555555556,"h":0.5765765765765766,"p50":0.761,"p95":12.376,"sp":63.8,"cal":80.8,"pub":71.6,"api":false,"aurc":0.059,"hb":0.577,"cov":{"0.85":0.8484848484848485,"0.9":0.70995670995671,"0.95":0.5887445887445888},"rc":[[1.0,0.775],[0.9,0.827],[0.8,0.876],[0.7,0.901],[0.6,0.942],[0.5,0.983],[0.4,0.989],[0.3,1.0]],"ece":0.096},{"n":"jev-local 9B","us":0,"i":65.4,"e":1.0,"s":0.84375,"h":0.5909090909090909,"p50":1.0450106970965862,"p95":2.6157593585550782,"sp":69.2,"cal":68.7,"pub":61.8,"api":false,"aurc":null,"hb":null},{"n":"gpt-oss-20b MoE","us":1,"i":64.8,"e":1.0,"s":0.8888888888888888,"h":0.5405405405405406,"p50":0.607,"p95":6.592,"sp":67.4,"cal":50.6,"pub":65.0,"api":false,"aurc":0.088,"hb":0.541,"cov":{"0.85":0.7532467532467533,"0.9":0.6320346320346321,"0.95":0.44155844155844154},"rc":[[1.0,0.745],[0.9,0.788],[0.8,0.822],[0.7,0.877],[0.6,0.906],[0.5,0.93],[0.4,0.957],[0.3,0.971]],"ece":0.247},{"n":"system-one (Qwen3-8B)","us":0,"i":63.3,"e":1.0,"s":0.90625,"h":0.5,"p50":0.1661309413611889,"p95":0.30472867079079147,"sp":84.4,"cal":36.8,"pub":54.8,"api":false,"aurc":null,"hb":null},{"n":"kev 8B","us":0,"i":62.7,"e":1.0,"s":0.9270833333333334,"h":0.4727272727272727,"p50":0.5904169715940952,"p95":1.1521932914853092,"sp":74.9,"cal":44.2,"pub":56.4,"api":false,"aurc":null,"hb":null},{"n":"Gemma 4 E2B","us":1,"i":58.9,"e":1.0,"s":0.875,"h":0.4594594594594595,"p50":0.09,"p95":1.166,"sp":80.9,"cal":0.0,"pub":26.3,"api":false,"aurc":0.121,"hb":0.459,"cov":{"0.85":0.6060606060606061,"0.9":0.5021645021645021,"0.95":0.36796536796536794},"rc":[[1.0,0.701],[0.9,0.716],[0.8,0.773],[0.7,0.815],[0.6,0.849],[0.5,0.904],[0.4,0.913],[0.3,0.957]],"ece":0.51},{"n":"Qwen3-8B","us":1,"i":58.7,"e":1.0,"s":0.7916666666666666,"h":0.5315315315315315,"p50":0.615,"p95":12.025,"sp":64.8,"cal":28.4,"pub":53.1,"api":false,"aurc":0.112,"hb":0.532,"cov":{"0.85":0.658008658008658,"0.9":0.47619047619047616,"0.95":0.37662337662337664},"rc":[[1.0,0.71],[0.9,0.75],[0.8,0.795],[0.7,0.815],[0.6,0.863],[0.5,0.887],[0.4,0.924],[0.3,0.971]],"ece":0.358},{"n":"Llama-3.1-8B","us":1,"i":54.7,"e":1.0,"s":0.75,"h":0.5045045045045045,"p50":0.73,"p95":11.672,"sp":64.2,"cal":62.6,"pub":63.6,"api":false,"aurc":0.136,"hb":0.505,"cov":{"0.85":0.5238095238095238,"0.9":0.4069264069264069,"0.95":0.2943722943722944},"rc":[[1.0,0.684],[0.9,0.736],[0.8,0.751],[0.7,0.784],[0.6,0.813],[0.5,0.843],[0.4,0.902],[0.3,0.942]],"ece":0.187},{"n":"kev 0.6B","us":0,"i":51.7,"e":1.0,"s":0.8125,"h":0.4,"p50":0.5904003903269768,"p95":0.9702187780290842,"sp":75.6,"cal":51.1,"pub":62.5,"api":false,"aurc":null,"hb":null},{"n":"Ministral-8B","us":1,"i":51.5,"e":1.0,"s":0.7638888888888888,"h":0.44144144144144143,"p50":0.602,"p95":12.23,"sp":64.8,"cal":62.5,"pub":62.6,"api":false,"aurc":0.132,"hb":0.441,"cov":{"0.85":0.5800865800865801,"0.9":0.4588744588744589,"0.95":0.31601731601731603},"rc":[[1.0,0.658],[0.9,0.702],[0.8,0.741],[0.7,0.784],[0.6,0.827],[0.5,0.896],[0.4,0.946],[0.3,0.957]],"ece":0.188},{"n":"Qwen3.5-2B","us":1,"i":49.8,"e":1.0,"s":0.7638888888888888,"h":0.4144144144144144,"p50":0.409,"p95":5.595,"sp":69.6,"cal":53.7,"pub":61.8,"api":false,"aurc":0.158,"hb":0.414,"cov":{"0.85":0.4935064935064935,"0.9":0.354978354978355,"0.95":0.2987012987012987},"rc":[[1.0,0.645],[0.9,0.668],[0.8,0.714],[0.7,0.747],[0.6,0.791],[0.5,0.843],[0.4,0.87],[0.3,0.957]],"ece":0.231},{"n":"Qwen2.5-1.5B","us":1,"i":47.4,"e":1.0,"s":0.7222222222222222,"h":0.4144144144144144,"p50":0.452,"p95":2.884,"sp":72.1,"cal":41.1,"pub":53.6,"api":false,"aurc":0.208,"hb":0.414,"cov":{"0.85":0.329004329004329,"0.9":0.2683982683982684,"0.95":0.19047619047619047},"rc":[[1.0,0.632],[0.9,0.659],[0.8,0.665],[0.7,0.698],[0.6,0.727],[0.5,0.748],[0.4,0.772],[0.3,0.87]],"ece":0.295},{"n":"jeff (400M)","us":0,"i":47.3,"e":1.0,"s":0.7604166666666666,"h":0.37727272727272726,"p50":0.9379300177097321,"p95":10.969045254960655,"sp":63.5,"cal":64.6,"pub":54.4,"api":false,"aurc":null,"hb":null},{"n":"Laya (421M)","us":0,"i":41.7,"e":0.9444444444444444,"s":0.7291666666666666,"h":0.3409090909090909,"p50":0.787067785859108,"p95":2.197125389799475,"sp":71.1,"cal":62.5,"pub":54.4,"api":false,"aurc":null,"hb":null},{"n":"Qwen2.5-0.5B","us":1,"i":37.9,"e":0.8541666666666666,"s":0.5555555555555556,"h":0.4774774774774775,"p50":0.046,"p95":0.726,"sp":84.1,"cal":62.5,"pub":38.5,"api":false,"aurc":0.281,"hb":0.477,"cov":{"0.85":0.07792207792207792,"0.9":0.0735930735930736,"0.95":0.06493506493506493},"rc":[[1.0,0.58],[0.9,0.62],[0.8,0.638],[0.7,0.66],[0.6,0.676],[0.5,0.704],[0.4,0.717],[0.3,0.768]],"ece":0.188},{"n":"Qwen2.5-Coder-0.5B","us":1,"i":15.4,"e":0.6458333333333334,"s":0.3888888888888889,"h":0.36036036036036034,"p50":0.05,"p95":0.742,"sp":83.9,"cal":89.2,"pub":5.6,"api":false,"aurc":0.47,"hb":0.36,"cov":{"0.85":0.004329004329004329,"0.9":0.004329004329004329,"0.95":0.004329004329004329},"rc":[[1.0,0.429],[0.9,0.442],[0.8,0.449],[0.7,0.481],[0.6,0.532],[0.5,0.522],[0.4,0.533],[0.3,0.594]],"ece":0.054}],"pos":{"expected":{"0":0.279,"1":0.414,"2":0.18,"3":0.108,"4":0.018},"heuristic":0.414,"chance":0.336,"models":{"Gemma 4 E4B +rep":{"idx1":0.423,"acc":0.64},"Qwen3.5-4B +rep":{"idx1":0.351,"acc":0.64},"Qwen3.5-9B":{"idx1":0.333,"acc":0.577},"gpt-oss-20b MoE":{"idx1":0.324,"acc":0.541},"Qwen3-8B":{"idx1":0.378,"acc":0.532},"Gemma 4 E2B":{"idx1":0.441,"acc":0.459},"Llama-3.1-8B":{"idx1":0.315,"acc":0.505},"Ministral-8B":{"idx1":0.342,"acc":0.441},"Qwen3.5-2B":{"idx1":0.532,"acc":0.414},"Qwen2.5-1.5B":{"idx1":0.45,"acc":0.414},"Qwen2.5-0.5B":{"idx1":0.667,"acc":0.477},"Qwen2.5-Coder-0.5B":{"idx1":0.225,"acc":0.36}}}};
+const ROWS=D.rows, POS=D.pos;
+const MID=[236,238,241],POSC=[24,79,149],NEG=[168,48,44];
+const dark=()=>document.documentElement.dataset.theme==="dark"||
+  (matchMedia("(prefers-color-scheme:dark)").matches&&document.documentElement.dataset.theme!=="light");
+const mid=()=>dark()?[35,40,46]:MID;
+function col(d,dom){const t=Math.min(Math.abs(d)/dom,1),p=d>=0?POSC:NEG,m=mid();
+  return `rgb(${m.map((c,i)=>Math.round(c+(p[i]-c)*t)).join(",")})`;}
+const ink=(d,dom)=>Math.min(Math.abs(d)/dom,1)>0.42?"#fff":"var(--ink)";
+const f3=x=>x==null?"--":x.toFixed(3).replace(/^0/,"");
+const sg=d=>(d>=0?"+":"\u2212")+Math.abs(d).toFixed(3).replace(/^0/,"");
+
+const TILES=[
+ {k:"Best capability",v:"75.0",s:"Gemma 4 E4B \u00b7 rank 19 of 59"},
+ {k:"Best composite",v:"74.5",s:"Qwen3.5-4B \u00b7 Jev publishes 74.4"},
+ {k:"Jev 1.13.0",v:"83.1",s:"same three tiers"},
+ {k:"Hard-tier floor",v:"0.414",s:"always pick option B, read nothing"},
+ {k:"We beat",v:"6.8\u00d7",s:"largest model our 4B outscores"},
+ {k:"Question repetition",v:"+3.9",s:"intel, multi-option items only"},
+];
+function tiles(){document.getElementById("tiles").innerHTML=TILES.map(t=>
+ `<div class="tile"><span class="k">${t.k}</span><span class="v mono">${t.v}</span>
+  <span class="s">${t.s}</span></div>`).join("");}
+
+function board(){
+  document.getElementById("board").innerHTML=
+  `<thead><tr><th class="lbl">System</th><th>intel</th><th>easy</th><th>std</th><th>hard</th>
+   <th>hard-&Delta;</th><th>calib</th><th>p50 s</th><th>p95 s</th><th>score</th><th>host</th></tr></thead>
+   <tbody>${ROWS.map(r=>{const hd=r.h-0.414;
+   return `<tr${r.us?' style="background:var(--surface-2)"':''}>
+    <th style="${r.us?'color:var(--s2)':''}">${r.n}<span class="base">${r.us?'ours':'published'}</span></th>
+    <td class="cell"><span class="a">${r.i.toFixed(1)}</span>
+      <span class="d"><span style="display:inline-block;vertical-align:middle;width:${r.i/100*50}px;height:5px;
+        background:${r.us?'var(--s2)':'var(--s1)'};border-radius:1px"></span></span></td>
+    <td class="cell mono" style="font-size:12px">${f3(r.e)}</td>
+    <td class="cell mono" style="font-size:12px">${f3(r.s)}</td>
+    <td class="cell mono" style="font-size:13px;font-weight:600">${f3(r.h)}</td>
+    <td class="cell${hd<=0?' under':''}" style="background:${col(hd,.33)};color:${ink(hd,.33)}"
+      data-tip="<b>${r.n}</b><br>hard ${f3(r.h)}<br>positional floor .414<br>${sg(hd)}"
+      ><span class="a" style="font-size:13px">${sg(hd)}</span></td>
+    <td class="cell mono" style="font-size:12px;color:${r.cal<25?'var(--bad)':'var(--ink)'}">${r.cal.toFixed(0)}</td>
+    <td class="cell mono" style="font-size:12px">${r.p50==null?'--':r.p50.toFixed(2)}</td>
+    <td class="cell mono" style="font-size:12px;color:${r.p95&&r.p50&&r.p95/r.p50>4?'var(--bad)':'var(--ink)'}">${r.p95==null?'--':r.p95.toFixed(2)}</td>
+    <td class="cell mono" style="font-size:12px">${r.pub==null?'--':r.pub.toFixed(1)}</td>
+    <td class="cell mono" style="font-size:11px;color:var(--ink-3)">${r.api?'api':'self'}</td></tr>`;}).join("")}</tbody>`;
+}
+function pos(){
+  const m=POS.models;
+  document.getElementById("pos").innerHTML=
+  `<thead><tr><th class="lbl">Model</th><th>picks index 1</th><th>hard accuracy</th><th>vs positional floor</th></tr></thead>
+   <tbody>${Object.entries(m).sort((a,b)=>b[1].acc-a[1].acc).map(([k,v])=>{const d=v.acc-0.414;
+    return `<tr><th>${k}</th>
+     <td class="cell"><span class="a" style="font-size:14px">${(v.idx1*100).toFixed(0)}%</span>
+       <span class="d">base rate 41%</span></td>
+     <td class="cell mono" style="font-size:14px">${f3(v.acc)}</td>
+     <td class="cell${d<=0.02?' under':''}" style="background:${col(d,.25)};color:${ink(d,.25)}"
+       ><span class="a" style="font-size:13px">${sg(d)}</span></td></tr>`;}).join("")}
+    <tr><th>always pick index 1<span class="base">reads nothing</span></th>
+      <td class="cell mono" style="color:var(--ink-3)">100%</td>
+      <td class="cell mono" style="font-size:14px">.414</td>
+      <td class="cell mono" style="color:var(--ink-3)">&mdash;</td></tr>
+    <tr><th>uniform chance<span class="base">1 / options</span></th>
+      <td class="cell mono" style="color:var(--ink-3)">&mdash;</td>
+      <td class="cell mono" style="font-size:14px">.336</td>
+      <td class="cell mono" style="color:var(--ink-3)">&mdash;</td></tr></tbody>`;
+}
+function rc(){
+  const W=620,H=250,L=48,R=132,T=14,B=38,xw=W-L-R,yh=H-T-B;
+  const X=c=>L+(1-c)/0.75*xw, Y=a=>T+yh-(a-0.4)/0.62*yh;
+  const sel=ROWS.filter(r=>r.us&&r.rc);
+  const cols=["var(--s1)","var(--s2)","var(--s3)","var(--pos)","var(--bad)","var(--warn)","var(--ink-3)","var(--good)"];
+  let g="";
+  [0.5,0.6,0.7,0.8,0.9,1.0].forEach(a=>{g+=`<line x1="${L}" x2="${W-R}" y1="${Y(a)}" y2="${Y(a)}" stroke="var(--rule)"/>
+    <text x="${L-7}" y="${Y(a)+4}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="IBM Plex Mono,monospace">${a.toFixed(1)}</text>`;});
+  [1.0,0.8,0.6,0.4,0.3].forEach(c=>{g+=`<text x="${X(c)}" y="${H-14}" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="IBM Plex Mono,monospace">${(c*100).toFixed(0)}%</text>`;});
+  sel.forEach((r,i)=>{
+    const pts=r.rc.map(([c,a])=>`${X(c).toFixed(1)},${Y(a).toFixed(1)}`).join(" ");
+    g+=`<polyline points="${pts}" fill="none" stroke="${cols[i%8]}" stroke-width="2" stroke-linejoin="round"/>`;
+    const last=r.rc[r.rc.length-1];
+    g+=`<text x="${W-R+6}" y="${T+12+i*15}" font-size="10.5" fill="${cols[i%8]}" font-family="IBM Plex Mono,monospace">${r.n.slice(0,18)}</text>`;
+  });
+  document.getElementById("rc").innerHTML=`<svg viewBox="0 0 ${W} ${H}" role="img"
+   aria-label="Selective accuracy rises as coverage falls for every model">${g}
+   <text x="${L+xw/2}" y="${H-1}" text-anchor="middle" font-size="10" fill="var(--ink-3)" font-family="IBM Plex Mono,monospace">coverage (fraction answered)</text>
+   <text x="${L-7}" y="${T-2}" text-anchor="end" font-size="10" fill="var(--ink-3)" font-family="IBM Plex Mono,monospace">acc</text></svg>`;
+}
+function sel(){
+  const rs=ROWS.filter(r=>r.us&&r.aurc!=null).sort((a,b)=>a.aurc-b.aurc);
+  document.getElementById("sel").innerHTML=
+  `<thead><tr><th class="lbl">Model</th><th>AURC</th><th>answer all</th><th>@90% cov</th><th>@50% cov</th>
+    <th>coverage at 85% acc</th><th>at 90%</th><th>at 95%</th></tr></thead>
+   <tbody>${rs.map(r=>`<tr><th>${r.n}</th>
+    <td class="cell mono" style="font-size:14px;font-weight:600">${r.aurc.toFixed(3)}</td>
+    <td class="cell mono" style="font-size:12px">${f3(r.rc[0][1])}</td>
+    <td class="cell mono" style="font-size:12px">${f3(r.rc[1][1])}</td>
+    <td class="cell mono" style="font-size:12px">${f3(r.rc[5][1])}</td>
+    ${["0.85","0.9","0.95"].map(k=>`<td class="cell mono" style="font-size:12px">${(r.cov[k]*100).toFixed(0)}%</td>`).join("")}
+   </tr>`).join("")}</tbody>`;
+}
+const BR=[{n:1,trim:[24.12,0],fork:[25.38,73.9],lazy:[49.39,73.9]},
+          {n:5,trim:[24.06,0],fork:[25.61,369.6],lazy:[29.00,73.9]},
+          {n:10,trim:[24.00,0],fork:[25.44,739.3],lazy:[26.44,73.9]},
+          {n:25,trim:[25.42,0],fork:[29.70,1848.2],lazy:[28.39,73.9]},
+          {n:50,trim:[26.88,0],fork:[28.58,3696.5],lazy:[27.23,73.9]}];
+function bars(id,title,pick,fmt,max){
+  document.getElementById(id).innerHTML=`<p class="eyebrow" style="margin-bottom:10px">${title}</p>`+BR.map(r=>
+   `<div class="brow"><span class="n">N=${r.n}</span><div class="stack">${
+     ["trim","fork","lazy"].map((s,i)=>{const v=pick(r[s]);
+      return `<div class="bline"><div class="track"><div class="fill" style="width:${Math.max(v/max*100,v>0?1.2:0)}%;background:var(--s${i+1})"
+        data-tip="<b>${s} \u00b7 N=${r.n}</b><br>${r[s][0].toFixed(2)} ms/question<br>${r[s][1].toFixed(1)} MB retained"></div></div>
+        <span class="bval">${fmt(v)}</span></div>`;}).join("")}</div></div>`).join("");
+}
+const RISKS=[
+ ["open","Positional structure","<b>41.4% of hard answers sit at index 1.</b> Two of our models score exactly that floor. Any hard-tier claim needs measuring against 0.414, not against 0.336 chance."],
+ ["ok","Reasoning templates","<b>Silent and costly.</b> Qwen3.5 opens a &lt;think&gt; block in its generation prompt; our read landed inside it and only 15% of probability mass reached the option markers. Score went 27.4 \u2192 61.8 once fixed. Every result now records <span class=\"mono\">marker_mass</span>."],
+ ["ok","Whole-sequence logits","<b>OOM on a 248k vocab.</b> Computing [1, n, vocab] to read one row cost ~3.7 GB on long prompts. Now prefills in chunks and runs only the final token."],
+ ["ok","GQA head duplication","<b>The identity control caught it.</b> Appending duplicated heads remapped every query head to the wrong KV group; only a zero-perturbation control that must reproduce the original exposed it."],
+ ["ok","Head-duplication surgery","<b>Negative result.</b> 28 heads with a RoPE phase shift costs ~14 intelligence and doubles ECE. The shift does the damage; the bias is noise. Untrained width surgery has no reason to work."],
+ ["ok","Code fine-tuning","<b>Destroys this capability.</b> Qwen2.5-Coder-0.5B loses 22.5 intelligence against its own base model, and cannot reach 85% accuracy at any coverage."],
+ ["ok","Order debiasing","<b>Model-dependent.</b> Helps the 1.5B (+3.7), hurts Qwen3.5-2B (\u22125.2) and 4B (\u22122.5). Order bias is a small-model pathology that fades with scale."],
+ ["ok","Quantisation","<b>Nearly free at every scale.</b> 4-bit vs 8-bit vs bf16 differ by ~1 point. The spec's INT4 assumption holds."],
+ ["open","The standard-tier gap","<b>Was the model, not the method.</b> Gemma 4 E4B reaches 0.958 where our Qwen 4B gets 0.833 \u2014 single-pass marker reading captures mid-difficulty items fine given a base that can do them."],
+ ["open","Calibration is a Gemma family trait","<b>Not a size artifact.</b> E2B ECE 0.510, E4B 0.298 \u2014 both poor. Yet E2B's AURC was second best: the probability <i>ordering</i> is useful even when the <i>values</i> are not."],
+];
+document.getElementById("risks").innerHTML=RISKS.map(([s,t,d])=>
+ `<li><span class="st ${s}">${s==="ok"?"settled":"open"}</span><p><b>${t}.</b> ${d}</p></li>`).join("");
+function render(){tiles();board();pos();rc();sel();
+  bars("mem","KV retained \u00b7 MB",v=>v[1],v=>v.toFixed(0)+" MB",3700);
+  bars("speed","Cost per question \u00b7 ms",v=>v[0],v=>v.toFixed(1)+" ms",50);}
+render();
+matchMedia("(prefers-color-scheme:dark)").addEventListener("change",render);
+const tip=document.getElementById("tip");
+document.addEventListener("pointerover",e=>{const t=e.target.closest("[data-tip]");
+  if(!t||!t.dataset.tip){tip.style.opacity=0;return;}
+  tip.innerHTML=t.dataset.tip;tip.style.opacity=1;});
+document.addEventListener("pointermove",e=>{if(tip.style.opacity!=="1")return;
+  const r=tip.getBoundingClientRect();
+  tip.style.left=Math.min(e.clientX+14,innerWidth-r.width-10)+"px";
+  tip.style.top=Math.max(e.clientY-r.height-12,8)+"px";});
+document.addEventListener("pointerout",e=>{if(!e.relatedTarget?.closest?.("[data-tip]"))tip.style.opacity=0;});
+</script>

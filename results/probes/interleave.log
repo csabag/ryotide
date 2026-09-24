@@ -1,0 +1,51 @@
+sample prompt head:
+ALERT  pg-disk-high   severity: page   fired 2026-09-19 04:12 UTC (question will be: Using only the information above, classify the pg-disk-high alert on db-03.)
+  host: db-03.prod   mount: /var/lib/postgresql   used: 97.2 %   threshold: 95 %   source: node-alertd (question will be: Using only the information above, classify the pg-disk-high alert on db-03.)
+
+On-call chat (#sre-oncall) (question will be: Using only the information above, classify the pg-disk-high alert on db-03.)
+  04:14  Ravi: 
+...
+[ 1/40] base ok  inter x   tok   635-> 1085  run acc base 1.000 inter 0.000  <- inter BROKE
+[ 2/40] base ok  inter ok  tok   360->  456  run acc base 1.000 inter 0.500
+[ 3/40] base ok  inter ok  tok  2775-> 6900  run acc base 1.000 inter 0.667
+[ 4/40] base x   inter ok  tok   376->  688  run acc base 0.750 inter 0.750  <- inter FIXED
+[ 5/40] base ok  inter ok  tok   430->  703  run acc base 0.800 inter 0.800
+[ 6/40] base ok  inter ok  tok   424->  998  run acc base 0.833 inter 0.833
+[ 7/40] base ok  inter ok  tok   690-> 1522  run acc base 0.857 inter 0.857
+[ 8/40] base ok  inter x   tok   511-> 1119  run acc base 0.875 inter 0.750  <- inter BROKE
+[ 9/40] base ok  inter ok  tok  2733-> 5197  run acc base 0.889 inter 0.778
+[10/40] base ok  inter ok  tok  2668-> 7101  run acc base 0.900 inter 0.800
+[11/40] base ok  inter ok  tok   217->  308  run acc base 0.909 inter 0.818
+[12/40] base ok  inter ok  tok  2811-> 5166  run acc base 0.917 inter 0.833
+[13/40] base ok  inter ok  tok   179->  239  run acc base 0.923 inter 0.846
+[14/40] base x   inter x   tok   921-> 2417  run acc base 0.857 inter 0.786
+[15/40] base x   inter x   tok  2678-> 6690  run acc base 0.800 inter 0.733
+[16/40] base x   inter x   tok   486-> 1256  run acc base 0.750 inter 0.688
+[17/40] base ok  inter ok  tok  2767-> 5137  run acc base 0.765 inter 0.706
+[18/40] base ok  inter x   tok  2656-> 6562  run acc base 0.778 inter 0.667  <- inter BROKE
+[19/40] base x   inter x   tok  1005-> 1730  run acc base 0.737 inter 0.632
+[20/40] base ok  inter ok  tok   238->  343  run acc base 0.750 inter 0.650
+[21/40] base x   inter x   tok   215->  320  run acc base 0.714 inter 0.619
+[22/40] base ok  inter ok  tok  4153->12603  run acc base 0.727 inter 0.636
+[23/40] base ok  inter ok  tok   327->  600  run acc base 0.739 inter 0.652
+[24/40] base x   inter x   tok   998-> 2138  run acc base 0.708 inter 0.625
+[25/40] base ok  inter ok  tok  2072-> 3689  run acc base 0.720 inter 0.640
+[26/40] base ok  inter ok  tok   307->  483  run acc base 0.731 inter 0.654
+[27/40] base x   inter x   tok   507->  897  run acc base 0.704 inter 0.630
+[28/40] base ok  inter ok  tok  3775-> 8923  run acc base 0.714 inter 0.643
+[29/40] base ok  inter ok  tok   411->  611  run acc base 0.724 inter 0.655
+[30/40] base x   inter x   tok  2511-> 6411  run acc base 0.700 inter 0.633
+[31/40] base ok  inter ok  tok   207->  312  run acc base 0.710 inter 0.645
+[32/40] base ok  inter ok  tok   196->  261  run acc base 0.719 inter 0.656
+[33/40] base x   inter x   tok  2817-> 6315  run acc base 0.697 inter 0.636
+[34/40] base x   inter x   tok   352->  664  run acc base 0.676 inter 0.618
+[35/40] base x   inter x   tok  2866-> 7234  run acc base 0.657 inter 0.600
+[36/40] base ok  inter x   tok   375->  465  run acc base 0.667 inter 0.583  <- inter BROKE
+[37/40] base ok  inter ok  tok   236->  311  run acc base 0.676 inter 0.595
+[38/40] base x   inter x   tok  2753-> 5281  run acc base 0.658 inter 0.579
+[39/40] base ok  inter x   tok  2369-> 6411  run acc base 0.667 inter 0.564  <- inter BROKE
+[40/40] base ok  inter ok  tok   393->  483  run acc base 0.675 inter 0.575
+
+arm     acc    mass_mean mass_min  conf   tokens  sec/item
+base   0.675  0.9998   0.9967  0.912    1335  2.08
+inter  0.575  0.9998   0.9959  0.898    3000  4.72

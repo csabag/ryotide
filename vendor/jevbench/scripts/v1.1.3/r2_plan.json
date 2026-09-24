@@ -1,0 +1,102 @@
+{
+ "systems": [
+  {
+   "key": "openjev-razorback16",
+   "display": "OpenJev (DiffusionGemma 26B-A4B NVFP4, razorback16)",
+   "adapter": "typesafe",
+   "endpoint": "http://127.0.0.1:8080",
+   "model": "openjev-latest",
+   "python": "/opt/venv/bin/python",
+   "cost_basis": "self_hosted_gpu_runpod",
+   "author": "razorback16 / Codiv",
+   "repo": "https://github.com/razorback16/openjev",
+   "underlying": "nvidia/diffusiongemma-26B-A4B-it-NVFP4",
+   "licence": "Apache-2.0 (repo and weights)",
+   "serving": "author's Docker image razorback16/openjev:0.2.0 (vLLM PR #57250 + Jev-compatible API), defaults except OPENJEV_MAX_MODEL_LEN=32768"
+  },
+  {
+   "key": "semif-qwen3.5-4b",
+   "display": "SemIf, formerly OpenJev (Qwen3.5-4B, TheoLeeCJ)",
+   "adapter": "semif_direct",
+   "endpoint": "Qwen/Qwen3.5-4B",
+   "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+   "model": "Qwen/Qwen3.5-4B",
+   "python": "/opt/semif/bin/python",
+   "cost_basis": "self_hosted_gpu_runpod",
+   "author": "Theodore Lee (TheoLeeCJ)",
+   "repo": "https://github.com/TheoLeeCJ/openjev",
+   "repo_commit": "98774715d1b05c5310df820c8727054787caaf20",
+   "underlying": "Qwen/Qwen3.5-4B (frozen, BF16)",
+   "licence": "MIT (code); Qwen3.5 weights Apache-2.0",
+   "serving": "author's direct mode (semif_phase1.direct.score), torch 2.10 / transformers 5.17 as pinned by the repo; Score mapping is our extension"
+  },
+  {
+   "key": "open-alternative-jev",
+   "display": "open-alternative-jev (Qwen3.5-4B, IkerMoel)",
+   "adapter": "so1_decider",
+   "endpoint": "Qwen/Qwen3.5-4B",
+   "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+   "model": "Qwen/Qwen3.5-4B",
+   "python": "/opt/so1/bin/python",
+   "cost_basis": "self_hosted_gpu_runpod",
+   "author": "IkerMoel",
+   "repo": "https://github.com/ikermoel/open-alternative-jev",
+   "repo_commit": "ca3ba65f142967030ecb453346e94d6f476a69df",
+   "underlying": "Qwen/Qwen3.5-4B (frozen, BF16)",
+   "licence": "Apache-2.0 (code and weights)",
+   "serving": "loaded exactly like the author's HF Space demo (HFBackend bf16, batch_size 1, temperature 1.0), mode 'separate'; same question mapping as our v1.1 Space attempt"
+  },
+  {
+   "key": "open-alternative-jev-yesfirst",
+   "display": "open-alternative-jev, author's yes/no order* (post-hoc adapter mode)",
+   "adapter": "so1_decider",
+   "endpoint": "Qwen/Qwen3.5-4B",
+   "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+   "model": "Qwen/Qwen3.5-4B",
+   "python": "/opt/so1/bin/python",
+   "cost_basis": "self_hosted_gpu_runpod",
+   "author": "IkerMoel",
+   "repo": "https://github.com/ikermoel/open-alternative-jev",
+   "repo_commit": "ca3ba65f142967030ecb453346e94d6f476a69df",
+   "underlying": "Qwen/Qwen3.5-4B (frozen, BF16)",
+   "licence": "Apache-2.0 (code and weights)",
+   "serving": "loaded exactly like the author's HF Space demo (HFBackend bf16, batch_size 1, temperature 1.0), mode 'separate'; same question mapping as our v1.1 Space attempt",
+   "request_options": {
+    "noul_order": "author_yes_no"
+   },
+   "posthoc": true,
+   "note": "Added after the frozen run showed a strong 'no' preference on judge items. Only yes/no questions change: options in the author's yes_no() order ('yes','no') instead of our v1.1 order ('no','yes'). Shown beside the frozen run, never instead of it."
+  },
+  {
+   "key": "nimble-9b",
+   "display": "Bespoke Nimble 9B (Bespoke Labs)",
+   "adapter": "typesafe",
+   "endpoint": "http://127.0.0.1:8080",
+   "model": "nimble-latest",
+   "python": "/opt/nimble-api/bin/python",
+   "cost_basis": "self_hosted_gpu_runpod",
+   "author": "Bespoke Labs",
+   "repo": "https://github.com/bespokelabsai/nimble",
+   "repo_commit": "d2387fc0b32d1173bfc995395c076a25a2a107c9",
+   "underlying": "bespokelabs/Bespoke-Nimble-9B@93ec5d6 (LoRA, merged into Qwen/Qwen3.5-9B@c202236 with the author's PEFT safe-merge)",
+   "licence": "Apache-2.0 (weights); repository without a licence file as of 19 Sep",
+   "serving": "the author's deploy/modal_app.py recipe on a pod: lmsysorg/sglang:v0.5.19-cu130 + openjev-sglang@7f84bed + nimble.serving.server (Jev-compatible /v1/systemone). Only change: API port 8000 -> 8080; Rust toolchain installed because SGLANG_RUST_SERVER=1 builds an extension."
+  },
+  {
+   "key": "system-one-sg",
+   "display": "system-one (Qwen3-8B, Sean Goedecke)",
+   "adapter": "sg_system_one",
+   "endpoint": "Qwen/Qwen3-8B",
+   "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "model": "Qwen/Qwen3-8B",
+   "python": "/opt/sgs1/bin/python",
+   "cost_basis": "self_hosted_gpu_runpod",
+   "author": "Sean Goedecke",
+   "repo": "https://github.com/sgoedecke/system-one",
+   "repo_commit": "ebde2a2db7067b920dfe51e9ce785613e66613d5",
+   "underlying": "Qwen/Qwen3-8B (frozen, BF16), the model of the author's demos",
+   "licence": "no licence file in the repository as of 19 Sep; Qwen3 weights Apache-2.0",
+   "serving": "the author's library in-process (SystemOne.from_pretrained, bf16, device_map cuda), one question per call; only Choice is native, yes/no and score are mapped to Choice by us (fixed before the run)"
+  }
+ ]
+}

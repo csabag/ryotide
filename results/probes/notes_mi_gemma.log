@@ -1,0 +1,48 @@
+model=mlx-community/gemma-4-e4b-it-8bit lang=en frame=' (most important 3 words for key facts relevant to question "{q}" are:' budget=3 words nofiller=False
+rollback identity control: maxdiff 0.0
+[ 1/40] tok   432 notes  4 | base ok notes x  mass 1.000   5.0s  <- notes BROKE
+--- first notes --- **disk 61%**, **db- | **db-03**, **pg-disk | **node-alertd, /var/lib | **data volume**, **node-alertd**,
+[ 2/40] tok   176 notes  2 | base ok notes ok mass 1.000   2.4s
+[ 3/40] tok  2561 notes 20 | base ok notes ok mass 1.000  22.9s
+[ 4/40] tok   282 notes  3 | base x  notes x  mass 1.000   2.7s
+[ 5/40] tok   336 notes  3 | base ok notes ok mass 1.000   3.2s
+[ 6/40] tok   334 notes  3 | base ok notes ok mass 0.999   3.1s
+[ 7/40] tok   457 notes  4 | base ok notes ok mass 0.999   3.6s
+[ 8/40] tok   404 notes  4 | base ok notes ok mass 0.998   4.0s
+[ 9/40] tok  2561 notes 20 | base ok notes ok mass 1.000  20.0s
+[10/40] tok  2462 notes 20 | base ok notes ok mass 1.000  22.9s
+[11/40] tok   154 notes  2 | base ok notes ok mass 1.000   2.0s
+[12/40] tok  2617 notes 21 | base ok notes ok mass 1.000  20.3s
+[13/40] tok    96 notes  0 | base ok notes ok mass 1.000   0.3s
+[14/40] tok   787 notes  5 | base x  notes x  mass 1.000   5.9s
+[15/40] tok  2423 notes 18 | base x  notes x  mass 1.000  19.9s
+[16/40] tok   394 notes  4 | base x  notes x  mass 1.000   3.9s
+[17/40] tok  2589 notes 21 | base ok notes ok mass 1.000  18.9s
+[18/40] tok  2345 notes 18 | base ok notes ok mass 1.000  19.3s
+[19/40] tok   694 notes  6 | base x  notes x  mass 1.000   6.6s
+[20/40] tok   166 notes  2 | base ok notes ok mass 1.000   1.7s
+[21/40] tok   132 notes  2 | base x  notes x  mass 1.000   1.8s
+[22/40] tok  3628 notes 18 | base ok notes ok mass 1.000  26.5s
+[23/40] tok   233 notes  2 | base ok notes ok mass 0.999   2.1s
+[24/40] tok   677 notes  6 | base x  notes x  mass 1.000   7.1s
+[25/40] tok  1867 notes 15 | base ok notes ok mass 0.999  16.2s
+[26/40] tok   234 notes  2 | base ok notes ok mass 1.000   2.1s
+[27/40] tok   404 notes  4 | base x  notes x  mass 1.000   4.7s
+[28/40] tok  3360 notes 24 | base ok notes ok mass 1.000  26.6s
+[29/40] tok   169 notes  2 | base ok notes ok mass 1.000   2.1s
+[30/40] tok  2184 notes 17 | base x  notes x  mass 1.000  17.1s
+[31/40] tok   124 notes  0 | base ok notes ok mass 1.000   0.4s
+[32/40] tok   130 notes  2 | base ok notes ok mass 1.000   1.9s
+[33/40] tok  2380 notes 19 | base x  notes x  mass 1.000  20.0s
+[34/40] tok   258 notes  3 | base x  notes x  mass 0.999   3.2s
+[35/40] tok  2509 notes 13 | base x  notes x  mass 1.000  19.0s
+[36/40] tok   197 notes  2 | base ok notes ok mass 1.000   2.0s
+[37/40] tok   153 notes  2 | base ok notes x  mass 1.000   1.7s  <- notes BROKE
+[38/40] tok  2557 notes 20 | base x  notes x  mass 1.000  19.0s
+[39/40] tok  2248 notes 14 | base ok notes ok mass 0.999  17.1s
+[40/40] tok   187 notes  2 | base ok notes ok mass 1.000   1.8s
+
+notes 349, distinct 289
+arm     acc    mass_mean mass_min  sec/item
+base   0.675  0.9998   0.9967  2.14
+notes  0.625  0.9998   0.9976  9.52

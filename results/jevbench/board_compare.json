@@ -1,0 +1,756 @@
+[
+ {
+  "name": "DeepSeek V4.1 Flash (thinking default)",
+  "ours": false,
+  "published": 57.54288064128547,
+  "intel_3tier": 95.8903579419068,
+  "tiers": {
+   "easy": 0.9861111111111112,
+   "standard": 0.9895833333333334,
+   "hard": 0.95
+  },
+  "ranked": true,
+  "open": "weights"
+ },
+ {
+  "name": "GPT-5.6 Luna (low reasoning effort)",
+  "ours": false,
+  "published": 65.94418818052425,
+  "intel_3tier": 95.38931462211072,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9791666666666666,
+   "hard": 0.9454545454545454
+  },
+  "ranked": true,
+  "open": "no"
+ },
+ {
+  "name": "OpenJev (thinking, BF16)",
+  "ours": false,
+  "published": 59.98618116922599,
+  "intel_3tier": 86.29980591391711,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 1.0,
+   "hard": 0.7818181818181819
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "djev (thinking)",
+  "ours": false,
+  "published": 62.35960888483864,
+  "intel_3tier": 84.28997932006133,
+  "tiers": {
+   "easy": 0.9583333333333334,
+   "standard": 0.9895833333333334,
+   "hard": 0.7772727272727272
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Gemini 3.1 Flash-Lite",
+  "ours": false,
+  "published": 60.08928259753951,
+  "intel_3tier": 83.70904251484576,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9895833333333334,
+   "hard": 0.75
+  },
+  "ranked": true,
+  "open": "no"
+ },
+ {
+  "name": "Jev 1.13.0 (TypeSafe AI)",
+  "ours": false,
+  "published": 74.40448849535433,
+  "intel_3tier": 83.1382010945923,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9895833333333334,
+   "hard": 0.740909090909091
+  },
+  "ranked": true,
+  "open": "no"
+ },
+ {
+  "name": "SimpleJev Qwen3.8-27B",
+  "ours": false,
+  "published": 66.29860868418298,
+  "intel_3tier": 82.52340565847719,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.96875,
+   "hard": 0.75
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "reflex-27b (Qwen3.8-27B)",
+  "ours": false,
+  "published": 63.33315017675085,
+  "intel_3tier": 82.50142865054636,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9583333333333334,
+   "hard": 0.759090909090909
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "LitJev (Qwen3.8-27B)",
+  "ours": false,
+  "published": 62.69075853252832,
+  "intel_3tier": 81.97454124615456,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9791666666666666,
+   "hard": 0.7318181818181818
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "classifier.dev (fast tier)",
+  "ours": false,
+  "published": 83.64670446057299,
+  "intel_3tier": 80.85483541357848,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9895833333333334,
+   "hard": 0.7045454545454546
+  },
+  "ranked": false,
+  "open": "no"
+ },
+ {
+  "name": "Winnow-12B Q8",
+  "ours": false,
+  "published": 71.21883011371422,
+  "intel_3tier": 79.95461926733665,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.96875,
+   "hard": 0.7090909090909091
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "djev (Maisa, diffusion-gemma)",
+  "ours": false,
+  "published": 73.02927314568292,
+  "intel_3tier": 79.69117556514074,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9791666666666666,
+   "hard": 0.6954545454545454
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "openjev-sglang (Qwen3.6-35B-A3B on SGLang)",
+  "ours": false,
+  "published": 65.26826354532687,
+  "intel_3tier": 79.64722154927908,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9583333333333334,
+   "hard": 0.7136363636363636
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "decider-35b-a3b (Mapika)",
+  "ours": false,
+  "published": 67.55405352545425,
+  "intel_3tier": 76.52957074581593,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.96875,
+   "hard": 0.6545454545454545
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "OpenJev (DiffusionGemma 26B-A4B NVFP4, razorback16)",
+  "ours": false,
+  "published": 66.36329072785742,
+  "intel_3tier": 75.93675231763164,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9583333333333334,
+   "hard": 0.6545454545454545
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "jqv (Qwen3-32B zero-shot)",
+  "ours": false,
+  "published": 68.62862396499413,
+  "intel_3tier": 75.36591089737819,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9583333333333334,
+   "hard": 0.6454545454545455
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Bespoke Nimble 9B (Bespoke Labs)",
+  "ours": false,
+  "published": 60.47515137925396,
+  "intel_3tier": 75.34393388944736,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9479166666666666,
+   "hard": 0.6545454545454545
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "SimpleJev Qwen3.6-35B-A3B",
+  "ours": false,
+  "published": 62.48305419264297,
+  "intel_3tier": 75.32195688151654,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9375,
+   "hard": 0.6636363636363637
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "reflex 4B (kshetrajna12)",
+  "ours": false,
+  "published": 70.31658532999862,
+  "intel_3tier": 73.91683033881372,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9479166666666666,
+   "hard": 0.6318181818181818
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "SemIf, formerly OpenJev (Qwen3.5-4B, TheoLeeCJ)",
+  "ours": false,
+  "published": 73.08747495585776,
+  "intel_3tier": 73.41191994235275,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9791666666666666,
+   "hard": 0.5954545454545455
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Open-Jev 9B (Zefan Cai)",
+  "ours": false,
+  "published": 54.95864804501749,
+  "intel_3tier": 70.11845307544297,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.90625,
+   "hard": 0.6090909090909091
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "jev-local (Qwen3.5-9B)",
+  "ours": false,
+  "published": 61.79680786600313,
+  "intel_3tier": 65.41985966583037,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.84375,
+   "hard": 0.5909090909090909
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "system-one-open (Gemma 4 E2B LoRA on an L4)",
+  "ours": false,
+  "published": 66.59745356122706,
+  "intel_3tier": 64.47596989670092,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9375,
+   "hard": 0.4909090909090909
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "open-alternative-jev (Qwen3.5-4B, IkerMoel)",
+  "ours": false,
+  "published": 66.9883439146374,
+  "intel_3tier": 63.992756115196734,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.84375,
+   "hard": 0.5681818181818182
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "system-one (Qwen3-8B, Sean Goedecke)",
+  "ours": false,
+  "published": 54.830990505255514,
+  "intel_3tier": 63.26835603240153,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.90625,
+   "hard": 0.5
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "kev 8B (research preview)",
+  "ours": false,
+  "published": 56.383551097366656,
+  "intel_3tier": 62.74146862800973,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9270833333333334,
+   "hard": 0.4727272727272727
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "kev 4B (research preview)",
+  "ours": false,
+  "published": 59.724673285425375,
+  "intel_3tier": 59.00902238843145,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.9166666666666666,
+   "hard": 0.42272727272727273
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "decider-2b (Mapika)",
+  "ours": false,
+  "published": 61.6816875223098,
+  "intel_3tier": 58.59173963071976,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.8541666666666666,
+   "hard": 0.4727272727272727
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Qwen3.8 27B (Chutes TEE)",
+  "ours": false,
+  "published": 24.836695615027768,
+  "intel_3tier": 57.363319086634135,
+  "tiers": {
+   "easy": 0.9861111111111112,
+   "standard": 0.9895833333333334,
+   "hard": 0.21363636363636362
+  },
+  "ranked": false,
+  "open": "weights"
+ },
+ {
+  "name": "Qwen3-Reranker-4B",
+  "ours": false,
+  "published": 63.82721228923758,
+  "intel_3tier": 56.74735332237442,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.7916666666666666,
+   "hard": 0.5
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "ZeroEntropy zerank-2",
+  "ours": false,
+  "published": 65.96713617823673,
+  "intel_3tier": 55.03482906161407,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.7916666666666666,
+   "hard": 0.4727272727272727
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "decision-machine-1 (milliseconds.ai)",
+  "ours": false,
+  "published": 68.33662413233554,
+  "intel_3tier": 52.9709530669345,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.7604166666666666,
+   "hard": 0.4681818181818182
+  },
+  "ranked": true,
+  "open": "no"
+ },
+ {
+  "name": "Open-Jev 2B (Zefan Cai)",
+  "ours": false,
+  "published": 51.31393833805917,
+  "intel_3tier": 52.18062196034679,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.7916666666666666,
+   "hard": 0.42727272727272725
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "kev 0.6B (research preview)",
+  "ours": false,
+  "published": 62.489006255662105,
+  "intel_3tier": 51.653734555955,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.8125,
+   "hard": 0.4
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "3.5-2b-o1",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 49.79236648537076,
+  "tiers": {
+   "standard": 0.7638888888888888,
+   "easy": 1.0,
+   "hard": 0.4144144144144144
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "1.5b-o4",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 47.42109277263364,
+  "tiers": {
+   "standard": 0.7222222222222222,
+   "easy": 1.0,
+   "hard": 0.4144144144144144
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "jeff (Logan Markewich, GLiFormer 400M)",
+  "ours": false,
+  "published": 54.38199454750733,
+  "intel_3tier": 47.26253886439995,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.7604166666666666,
+   "hard": 0.37727272727272726
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "1.5b-bf16-o2",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 44.93347706443751,
+  "tiers": {
+   "standard": 0.7083333333333334,
+   "easy": 0.9791666666666666,
+   "hard": 0.3963963963963964
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "3.5-2b-o2",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 44.6003673275831,
+  "tiers": {
+   "standard": 0.6527777777777778,
+   "easy": 1.0,
+   "hard": 0.43243243243243246
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "1.5b-o2",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 43.69369578422845,
+  "tiers": {
+   "standard": 0.6666666666666666,
+   "easy": 1.0,
+   "hard": 0.40540540540540543
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "smalljev semantic-v9",
+  "ours": false,
+  "published": 27.444453253651357,
+  "intel_3tier": 42.643838940206855,
+  "tiers": {
+   "easy": 0.9722222222222222,
+   "standard": 0.6875,
+   "hard": 0.38181818181818183
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "1.5b-o1",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 42.45381948100268,
+  "tiers": {
+   "standard": 0.625,
+   "easy": 1.0,
+   "hard": 0.42342342342342343
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "Laya (Convai Innovations, ModernBERT-large 421M)",
+  "ours": false,
+  "published": 54.35373809070198,
+  "intel_3tier": 41.691934624773594,
+  "tiers": {
+   "easy": 0.9444444444444444,
+   "standard": 0.7291666666666666,
+   "hard": 0.3409090909090909
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "GLiNER2 (Fastino, gliner2.5-base)",
+  "ours": false,
+  "published": 24.036445808742133,
+  "intel_3tier": 40.316519243331385,
+  "tiers": {
+   "easy": 0.9722222222222222,
+   "standard": 0.6666666666666666,
+   "hard": 0.36363636363636365
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "openJev Verdict 1.4",
+  "ours": false,
+  "published": 38.93683519894202,
+  "intel_3tier": 38.74803325377644,
+  "tiers": {
+   "easy": 0.8611111111111112,
+   "standard": 0.6770833333333334,
+   "hard": 0.37727272727272726
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "GLiNER2 large (Fastino)",
+  "ours": false,
+  "published": 29.55158409895235,
+  "intel_3tier": 38.32244134910919,
+  "tiers": {
+   "easy": 0.9861111111111112,
+   "standard": 0.625,
+   "hard": 0.36363636363636365
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "openJev Verdict (heman10x, ModernBERT-base 151M)",
+  "ours": false,
+  "published": 38.059545049974176,
+  "intel_3tier": 37.8478171075346,
+  "tiers": {
+   "easy": 0.8611111111111112,
+   "standard": 0.65625,
+   "hard": 0.38181818181818183
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "OpenDecision (ModernBERT-large zero-shot)",
+  "ours": false,
+  "published": 40.58744897671299,
+  "intel_3tier": 33.597107552064855,
+  "tiers": {
+   "easy": 0.875,
+   "standard": 0.625,
+   "hard": 0.33181818181818185
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "open-jev-deberta-v3-large (local CPU)",
+  "ours": false,
+  "published": 23.065925583996304,
+  "intel_3tier": 30.992997601228442,
+  "tiers": {
+   "easy": 1.0,
+   "standard": 0.4895833333333333,
+   "hard": 0.36363636363636365
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "GLiNER2.5 multi (Fastino, 287M)",
+  "ours": false,
+  "published": 16.61305398280731,
+  "intel_3tier": 30.394525858372695,
+  "tiers": {
+   "easy": 0.9027777777777778,
+   "standard": 0.5104166666666666,
+   "hard": 0.37727272727272726
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "kev 0.5B",
+  "ours": false,
+  "published": 33.24350332804402,
+  "intel_3tier": 29.932098181311595,
+  "tiers": {
+   "easy": 0.9583333333333334,
+   "standard": 0.5208333333333334,
+   "hard": 0.3090909090909091
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "0.5b-o2",
+  "ours": true,
+  "published": null,
+  "intel_3tier": 27.87696117216952,
+  "tiers": {
+   "standard": 0.4583333333333333,
+   "easy": 0.8958333333333334,
+   "hard": 0.38738738738738737
+  },
+  "ranked": true,
+  "open": true
+ },
+ {
+  "name": "GLiNER2.5 small (Fastino, 74M)",
+  "ours": false,
+  "published": 13.84974486725046,
+  "intel_3tier": 24.166062101940135,
+  "tiers": {
+   "easy": 0.8333333333333334,
+   "standard": 0.4791666666666667,
+   "hard": 0.33181818181818185
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Needle 3, options as tools (post-hoc adapter mode)",
+  "ours": false,
+  "published": 1.0757743846539873,
+  "intel_3tier": 17.814419657290653,
+  "tiers": {
+   "easy": 0.6666666666666666,
+   "standard": 0.3125,
+   "hard": null
+  },
+  "ranked": false,
+  "open": "yes"
+ },
+ {
+  "name": "Mixedbread mxbai-rerank-base-v2",
+  "ours": false,
+  "published": 0.764251199794221,
+  "intel_3tier": 9.29625411888098,
+  "tiers": {
+   "easy": 0.4444444444444444,
+   "standard": 0.3333333333333333,
+   "hard": 0.4
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "BAAI bge-reranker-v2-m3",
+  "ours": false,
+  "published": 0.6763072957019215,
+  "intel_3tier": 8.69956861403181,
+  "tiers": {
+   "easy": 0.4305555555555556,
+   "standard": 0.3645833333333333,
+   "hard": 0.36818181818181817
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Alibaba GTE Reranker ModernBERT-base",
+  "ours": false,
+  "published": 0.32219057759911496,
+  "intel_3tier": 5.84446520992853,
+  "tiers": {
+   "easy": 0.3333333333333333,
+   "standard": 0.3958333333333333,
+   "hard": 0.33636363636363636
+  },
+  "ranked": true,
+  "open": "yes"
+ },
+ {
+  "name": "Needle 3 (Cactus, 2-bit, local CPU)",
+  "ours": false,
+  "published": 0.09466799356370086,
+  "intel_3tier": 5.11100334087725,
+  "tiers": {
+   "easy": 0.4722222222222222,
+   "standard": 0.16666666666666666,
+   "hard": 0.07727272727272727
+  },
+  "ranked": false,
+  "open": "yes"
+ }
+]

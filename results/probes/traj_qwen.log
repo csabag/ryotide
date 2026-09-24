@@ -1,0 +1,43 @@
+model=mlx-community/Qwen3.5-4B-MLX-8bit  HEAD='<|im_start|>user\n'  TAIL='<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
+[ 1/40] tok   427 ckpts   8 | base x  p0 x  traj-final ok flips  5 min-mass 0.979   2.9s
+[ 2/40] tok   173 ckpts   4 | base ok p0 x  traj-final ok flips  2 min-mass 0.995   1.5s
+[ 3/40] tok  2508 ckpts  40 | base ok p0 x  traj-final ok flips  7 min-mass 0.994  14.9s
+[ 4/40] tok   284 ckpts   6 | base ok p0 x  traj-final ok flips  1 min-mass 0.885   2.1s
+[ 5/40] tok   304 ckpts   6 | base ok p0 ok traj-final ok flips  0 min-mass 0.881   2.2s
+[ 6/40] tok   336 ckpts   7 | base ok p0 x  traj-final ok flips  1 min-mass 0.979   2.4s
+[ 7/40] tok   472 ckpts   9 | base x  p0 ok traj-final x  flips  3 min-mass 0.971   3.4s
+[ 8/40] tok   408 ckpts   8 | base ok p0 ok traj-final ok flips  0 min-mass 0.974   2.9s
+[ 9/40] tok  2555 ckpts  41 | base x  p0 x  traj-final x  flips  4 min-mass 0.993  15.1s
+[10/40] tok  2418 ckpts  39 | base ok p0 x  traj-final ok flips  6 min-mass 0.997  14.0s
+[11/40] tok   152 ckpts   4 | base ok p0 ok traj-final ok flips  2 min-mass 0.976   1.4s
+[12/40] tok  2606 ckpts  42 | base ok p0 ok traj-final ok flips  5 min-mass 0.994  15.2s
+[13/40] tok    94 ckpts   3 | base ok p0 ok traj-final ok flips  0 min-mass 0.891   1.1s
+[14/40] tok   798 ckpts  14 | base x  p0 x  traj-final x  flips  0 min-mass 0.988   5.1s
+[15/40] tok  2451 ckpts  39 | base x  p0 x  traj-final x  flips  5 min-mass 0.984  14.2s
+[16/40] tok   392 ckpts   8 | base x  p0 x  traj-final x  flips  0 min-mass 0.958   2.7s
+[17/40] tok  2576 ckpts  41 | base ok p0 x  traj-final x  flips 14 min-mass 0.984  14.6s
+[18/40] tok  2364 ckpts  38 | base ok p0 ok traj-final ok flips  8 min-mass 0.988  13.6s
+[19/40] tok   696 ckpts  12 | base ok p0 ok traj-final x  flips  2 min-mass 0.991   4.4s
+[20/40] tok   166 ckpts   4 | base ok p0 ok traj-final ok flips  0 min-mass 0.977   1.4s
+[21/40] tok   132 ckpts   4 | base x  p0 ok traj-final x  flips  1 min-mass 0.919   1.3s
+[22/40] tok  3665 ckpts  58 | base ok p0 x  traj-final x  flips  9 min-mass 0.997  21.2s
+[23/40] tok   225 ckpts   5 | base ok p0 ok traj-final ok flips  0 min-mass 0.821   1.8s
+[24/40] tok   675 ckpts  12 | base ok p0 ok traj-final x  flips  3 min-mass 0.996   4.4s
+[25/40] tok  1803 ckpts  29 | base ok p0 x  traj-final ok flips  2 min-mass 0.980  10.3s
+[26/40] tok   231 ckpts   5 | base ok p0 ok traj-final ok flips  0 min-mass 0.988   1.7s
+[27/40] tok   413 ckpts   8 | base ok p0 ok traj-final ok flips  0 min-mass 0.989   2.8s
+[28/40] tok  3376 ckpts  53 | base ok p0 ok traj-final x  flips 15 min-mass 0.996  19.6s
+[29/40] tok   169 ckpts   4 | base x  p0 x  traj-final x  flips  2 min-mass 0.977   1.5s
+[30/40] tok  2225 ckpts  36 | base x  p0 ok traj-final ok flips  0 min-mass 0.997  13.0s
+[31/40] tok   126 ckpts   3 | base ok p0 x  traj-final ok flips  1 min-mass 0.919   1.1s
+[32/40] tok   129 ckpts   4 | base ok p0 ok traj-final ok flips  0 min-mass 0.973   1.2s
+[33/40] tok  2395 ckpts  39 | base x  p0 x  traj-final x  flips  6 min-mass 0.961  13.8s
+[34/40] tok   255 ckpts   5 | base x  p0 x  traj-final x  flips  0 min-mass 0.883   1.8s
+[35/40] tok  2459 ckpts  39 | base ok p0 x  traj-final ok flips  6 min-mass 0.970  14.7s
+[36/40] tok   188 ckpts   4 | base ok p0 x  traj-final ok flips  1 min-mass 0.993   1.4s
+[37/40] tok   153 ckpts   4 | base ok p0 ok traj-final ok flips  0 min-mass 0.916   1.4s
+[38/40] tok  2544 ckpts  41 | base ok p0 x  traj-final x  flips  6 min-mass 0.986  14.5s
+[39/40] tok  2189 ckpts  35 | base ok p0 ok traj-final ok flips  0 min-mass 0.975  12.5s
+[40/40] tok   189 ckpts   4 | base ok p0 x  traj-final x  flips  1 min-mass 0.997   1.5s
+
+tokenization mismatches vs adapter templating: 18/40

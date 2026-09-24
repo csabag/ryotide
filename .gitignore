@@ -1,0 +1,33 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Scratch
+/tmp/
+*.log.bak
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Snapshot bundle, regenerable from results/
+jevbench-results.zip
+
+# Run logs: redundant with each run's summary.json, and they embed local paths.
+# (results/probes/*.log are kept: for some probes the log IS the only record.)
+results/*.log
+results/jevbench/*.log
+# Budget ledger: $0 reservation events from local runs, no information
+results/**/ledger.jsonl
+# Byte-identical copy of an upstream file; see vendor/jevbench/VENDORED.md
+results/published/
+# macOS
+.DS_Store

@@ -1,0 +1,178 @@
+{
+ "A alone": {
+  "axes": {
+   "intelligence": 66.2,
+   "calibration": 77.8,
+   "speed": 68.7,
+   "cost": 91.0
+  },
+  "tiers": {
+   "standard": 0.833,
+   "easy": 1.0,
+   "hard": 0.613
+  },
+  "ece": 0.111,
+  "p50_ms": 423,
+  "score": 75.3
+ },
+ "B alone": {
+  "axes": {
+   "intelligence": 72.2,
+   "calibration": 40.4,
+   "speed": 71.9,
+   "cost": 91.0
+  },
+  "tiers": {
+   "standard": 0.958,
+   "easy": 1.0,
+   "hard": 0.595
+  },
+  "ece": 0.298,
+  "p50_ms": 292,
+  "score": 66.1
+ },
+ "max-confidence wins": {
+  "axes": {
+   "intelligence": 71.9,
+   "calibration": 40.0,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.944,
+   "easy": 1.0,
+   "hard": 0.604
+  },
+  "ece": 0.3,
+  "p50_ms": 713,
+  "score": 62.5
+ },
+ "mean of distributions": {
+  "axes": {
+   "intelligence": 71.9,
+   "calibration": 68.5,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.944,
+   "easy": 1.0,
+   "hard": 0.604
+  },
+  "ece": 0.157,
+  "p50_ms": 713,
+  "score": 71.5
+ },
+ "geometric mean": {
+  "axes": {
+   "intelligence": 71.4,
+   "calibration": 54.0,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.944,
+   "easy": 1.0,
+   "hard": 0.595
+  },
+  "ece": 0.23,
+  "p50_ms": 713,
+  "score": 67.2
+ },
+ "B unless B unsure(<.6)": {
+  "axes": {
+   "intelligence": 72.2,
+   "calibration": 39.7,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.958,
+   "easy": 1.0,
+   "hard": 0.595
+  },
+  "ece": 0.302,
+  "p50_ms": 713,
+  "score": 62.4
+ },
+ "A unless A unsure(<.6)": {
+  "axes": {
+   "intelligence": 66.9,
+   "calibration": 51.9,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.875,
+   "easy": 1.0,
+   "hard": 0.586
+  },
+  "ece": 0.241,
+  "p50_ms": 713,
+  "score": 65.4
+ },
+ "rank-normalised conf": {
+  "axes": {
+   "intelligence": 69.6,
+   "calibration": 47.9,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.903,
+   "easy": 1.0,
+   "hard": 0.604
+  },
+  "ece": 0.261,
+  "p50_ms": 713,
+  "score": 64.8
+ },
+ "temp-matched conf (A/3)": {
+  "axes": {
+   "intelligence": 72.2,
+   "calibration": 40.4,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.958,
+   "easy": 1.0,
+   "hard": 0.595
+  },
+  "ece": 0.298,
+  "p50_ms": 713,
+  "score": 62.7
+ },
+ "agree->either, else B": {
+  "axes": {
+   "intelligence": 72.2,
+   "calibration": 67.0,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.958,
+   "easy": 1.0,
+   "hard": 0.595
+  },
+  "ece": 0.165,
+  "p50_ms": 713,
+  "score": 71.1
+ },
+ "B, escalate on disagree": {
+  "axes": {
+   "intelligence": 72.2,
+   "calibration": 40.4,
+   "speed": 64.6,
+   "cost": 81.9
+  },
+  "tiers": {
+   "standard": 0.958,
+   "easy": 1.0,
+   "hard": 0.595
+  },
+  "ece": 0.298,
+  "p50_ms": 713,
+  "score": 62.7
+ }
+}

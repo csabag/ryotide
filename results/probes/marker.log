@@ -1,0 +1,51 @@
+korean markers: 미능쁨촘귄껏훈웃뀨뷔졸길역땠굉꾿   far pool: 9377 chars after norm filter
+[ 1/40] letters:ok letters+cc:ok korean:x  korean+cc:x  far:ok far+cc:x 
+[ 2/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[ 3/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[ 4/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[ 5/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[ 6/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[ 7/40] letters:ok letters+cc:x  korean:ok korean+cc:x  far:x  far+cc:x 
+[ 8/40] letters:ok letters+cc:ok korean:ok korean+cc:x  far:x  far+cc:x 
+[ 9/40] letters:ok letters+cc:ok korean:ok korean+cc:x  far:ok far+cc:x 
+[10/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[11/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[12/40] letters:ok letters+cc:x  korean:ok korean+cc:ok far:ok far+cc:ok
+[13/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[14/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[15/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[16/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[17/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[18/40] letters:ok letters+cc:ok korean:x  korean+cc:ok far:ok far+cc:x 
+[19/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[20/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[21/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[22/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[23/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[24/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[25/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[26/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[27/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[28/40] letters:ok letters+cc:x  korean:ok korean+cc:ok far:ok far+cc:ok
+[29/40] letters:ok letters+cc:x  korean:x  korean+cc:ok far:x  far+cc:ok
+[30/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[31/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[32/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[33/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:ok
+[34/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[35/40] letters:x  letters+cc:x  korean:x  korean+cc:x  far:x  far+cc:x 
+[36/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[37/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+[38/40] letters:x  letters+cc:ok korean:x  korean+cc:ok far:x  far+cc:x 
+[39/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:x 
+[40/40] letters:ok letters+cc:ok korean:ok korean+cc:ok far:ok far+cc:ok
+
+far markers: mean max-cos to prompt 0.115
+gold position dist   0.33 0.33 0.23 0.12 0.00
+arm             acc  mass mean  mass min   predicted-position dist (A..E+)
+letters       0.675     0.9998    0.9967   0.38 0.28 0.20 0.12 0.03
+letters+cc    0.600     0.9998    0.9967   0.40 0.25 0.15 0.15 0.05
+korean        0.600     0.9854    0.8579   0.40 0.30 0.15 0.12 0.03
+korean+cc     0.600     0.9854    0.8579   0.40 0.28 0.17 0.12 0.03
+far           0.600     0.9210    0.3802   0.38 0.33 0.15 0.12 0.03
+far+cc        0.550     0.9210    0.3802   0.35 0.38 0.12 0.12 0.03

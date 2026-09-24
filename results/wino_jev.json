@@ -1,0 +1,202 @@
+[
+ {
+  "sentence": "The archivist could not fit the ledger into the document scanner because it was too warped.",
+  "pronoun": "it",
+  "candidate": "the ledger",
+  "label": 1,
+  "schema": "The archivist could not fit the ledger into the document scanner",
+  "p": 0.85,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The archivist could not fit the ledger into the document scanner because it was too warped.",
+  "pronoun": "it",
+  "candidate": "the document scanner",
+  "label": 0,
+  "schema": "The archivist could not fit the ledger into the document scanner",
+  "p": 0.07,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The archivist could not fit the ledger into the document scanner because it was too narrow.",
+  "pronoun": "it",
+  "candidate": "the ledger",
+  "label": 0,
+  "schema": "The archivist could not fit the ledger into the document scanner",
+  "p": 0.33,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The archivist could not fit the ledger into the document scanner because it was too narrow.",
+  "pronoun": "it",
+  "candidate": "the document scanner",
+  "label": 1,
+  "schema": "The archivist could not fit the ledger into the document scanner",
+  "p": 0.59,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The mediator interrupted the claimant because she had been talking for twenty minutes.",
+  "pronoun": "she",
+  "candidate": "the mediator",
+  "label": 0,
+  "schema": "The mediator interrupted the claimant",
+  "p": 0.06,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The mediator interrupted the claimant because she had been talking for twenty minutes.",
+  "pronoun": "she",
+  "candidate": "the claimant",
+  "label": 1,
+  "schema": "The mediator interrupted the claimant",
+  "p": 0.86,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The mediator interrupted the claimant because she needed to clarify the procedure.",
+  "pronoun": "she",
+  "candidate": "the mediator",
+  "label": 1,
+  "schema": "The mediator interrupted the claimant",
+  "p": 0.66,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The mediator interrupted the claimant because she needed to clarify the procedure.",
+  "pronoun": "she",
+  "candidate": "the claimant",
+  "label": 0,
+  "schema": "The mediator interrupted the claimant",
+  "p": 0.29,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The brewers moved the starter culture into the cold room because it was overactive.",
+  "pronoun": "it",
+  "candidate": "the starter culture",
+  "label": 1,
+  "schema": "The brewers moved the starter culture into the cold room",
+  "p": 0.89,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The brewers moved the starter culture into the cold room because it was overactive.",
+  "pronoun": "it",
+  "candidate": "the cold room",
+  "label": 0,
+  "schema": "The brewers moved the starter culture into the cold room",
+  "p": 0.04,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The brewers moved the starter culture into the cold room because it had just been repaired.",
+  "pronoun": "it",
+  "candidate": "the starter culture",
+  "label": 0,
+  "schema": "The brewers moved the starter culture into the cold room",
+  "p": 0.05,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The brewers moved the starter culture into the cold room because it had just been repaired.",
+  "pronoun": "it",
+  "candidate": "the cold room",
+  "label": 1,
+  "schema": "The brewers moved the starter culture into the cold room",
+  "p": 0.87,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The luthier rejected the spruce top for the mandolin because it had a hidden crack.",
+  "pronoun": "it",
+  "candidate": "the spruce top",
+  "label": 1,
+  "schema": "The luthier rejected the spruce top for the mandolin",
+  "p": 0.92,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The luthier rejected the spruce top for the mandolin because it had a hidden crack.",
+  "pronoun": "it",
+  "candidate": "the mandolin",
+  "label": 0,
+  "schema": "The luthier rejected the spruce top for the mandolin",
+  "p": 0.07,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The luthier rejected the spruce top for the mandolin because it called for a darker tonewood.",
+  "pronoun": "it",
+  "candidate": "the spruce top",
+  "label": 0,
+  "schema": "The luthier rejected the spruce top for the mandolin",
+  "p": 0.14,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The luthier rejected the spruce top for the mandolin because it called for a darker tonewood.",
+  "pronoun": "it",
+  "candidate": "the mandolin",
+  "label": 1,
+  "schema": "The luthier rejected the spruce top for the mandolin",
+  "p": 0.73,
+  "pred": 1,
+  "correct": true
+ },
+ {
+  "sentence": "The registrar denied the request from the graduate because she had no record of the enrolment.",
+  "pronoun": "she",
+  "candidate": "the registrar",
+  "label": 1,
+  "schema": "The registrar denied the request from the graduate",
+  "p": 0.27,
+  "pred": 0,
+  "correct": false
+ },
+ {
+  "sentence": "The registrar denied the request from the graduate because she had no record of the enrolment.",
+  "pronoun": "she",
+  "candidate": "the graduate",
+  "label": 0,
+  "schema": "The registrar denied the request from the graduate",
+  "p": 0.65,
+  "pred": 1,
+  "correct": false
+ },
+ {
+  "sentence": "The registrar denied the request from the graduate because she had not paid the outstanding fee.",
+  "pronoun": "she",
+  "candidate": "the registrar",
+  "label": 0,
+  "schema": "The registrar denied the request from the graduate",
+  "p": 0.05,
+  "pred": 0,
+  "correct": true
+ },
+ {
+  "sentence": "The registrar denied the request from the graduate because she had not paid the outstanding fee.",
+  "pronoun": "she",
+  "candidate": "the graduate",
+  "label": 1,
+  "schema": "The registrar denied the request from the graduate",
+  "p": 0.85,
+  "pred": 1,
+  "correct": true
+ }
+]

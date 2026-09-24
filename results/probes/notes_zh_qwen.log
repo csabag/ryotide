@@ -1,0 +1,48 @@
+vocab 248077, CJK-only tokens allowed in notes: 53426
+rollback identity control on 1013-token prefix: maxdiff 0.0
+[ 1/40] tok   427 notes  3 | base x  notes ok mass 0.998   3.6s  <- notes FIXED
+--- first notes --- 该事件 | 备忘 | 备注
+[ 2/40] tok   173 notes  1 | base ok notes ok mass 0.997   1.8s
+[ 3/40] tok  2508 notes 19 | base ok notes ok mass 0.997  17.7s
+[ 4/40] tok   284 notes  2 | base ok notes x  mass 0.987   2.3s  <- notes BROKE
+[ 5/40] tok   304 notes  3 | base ok notes ok mass 0.981   2.6s
+[ 6/40] tok   336 notes  3 | base ok notes ok mass 0.983   2.7s
+[ 7/40] tok   472 notes  4 | base x  notes x  mass 0.994   3.9s
+[ 8/40] tok   408 notes  4 | base ok notes x  mass 0.992   3.2s  <- notes BROKE
+[ 9/40] tok  2555 notes 17 | base x  notes x  mass 0.997  17.9s
+[10/40] tok  2418 notes 17 | base ok notes ok mass 0.998  17.1s
+[11/40] tok   152 notes  2 | base ok notes ok mass 0.991   1.5s
+[12/40] tok  2606 notes 18 | base ok notes ok mass 0.996  18.2s
+[13/40] tok    94 notes  0 | base ok notes ok mass 0.981   0.5s
+[14/40] tok   798 notes  7 | base x  notes x  mass 0.989   6.0s
+[15/40] tok  2451 notes 20 | base x  notes x  mass 0.998  17.2s
+[16/40] tok   392 notes  4 | base x  notes x  mass 0.974   3.2s
+[17/40] tok  2576 notes 16 | base ok notes ok mass 0.997  17.9s
+[18/40] tok  2364 notes 18 | base ok notes ok mass 0.996  16.7s
+[19/40] tok   696 notes  5 | base ok notes ok mass 0.998   5.6s
+[20/40] tok   166 notes  2 | base ok notes ok mass 0.982   1.6s
+[21/40] tok   132 notes  2 | base x  notes ok mass 0.989   1.4s  <- notes FIXED
+[22/40] tok  3665 notes 29 | base ok notes ok mass 0.998  26.0s
+[23/40] tok   225 notes  2 | base ok notes ok mass 0.951   1.8s
+[24/40] tok   675 notes  5 | base ok notes ok mass 0.996   5.4s
+[25/40] tok  1803 notes 13 | base ok notes ok mass 0.990  13.4s
+[26/40] tok   231 notes  1 | base ok notes ok mass 0.991   1.8s
+[27/40] tok   413 notes  3 | base ok notes ok mass 0.992   3.3s
+[28/40] tok  3376 notes 26 | base ok notes ok mass 0.997  24.0s
+[29/40] tok   169 notes  1 | base x  notes x  mass 0.998   1.9s
+[30/40] tok  2225 notes 17 | base x  notes ok mass 0.997  15.7s  <- notes FIXED
+[31/40] tok   126 notes  0 | base ok notes ok mass 0.991   0.6s
+[32/40] tok   129 notes  2 | base ok notes ok mass 0.989   1.3s
+[33/40] tok  2395 notes 19 | base x  notes x  mass 0.997  17.0s
+[34/40] tok   255 notes  2 | base x  notes x  mass 0.975   2.0s
+[35/40] tok  2459 notes 15 | base ok notes x  mass 0.997  17.3s  <- notes BROKE
+[36/40] tok   188 notes  2 | base ok notes ok mass 0.995   1.9s
+[37/40] tok   153 notes  2 | base ok notes ok mass 0.983   1.5s
+[38/40] tok  2544 notes 19 | base ok notes ok mass 0.997  17.7s
+[39/40] tok  2189 notes 18 | base ok notes ok mass 0.980  15.5s
+[40/40] tok   189 notes  2 | base ok notes ok mass 0.995   1.9s
+
+states that got notes: 38/40
+arm     acc    mass_mean mass_min  sec/item
+base   0.725  0.9929   0.9689  3.39
+notes  0.725  0.9906   0.9505  8.32

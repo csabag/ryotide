@@ -1,0 +1,16 @@
+[project]
+name = "ryotide"
+version = "0.1.0"
+description = "RYOTIDE - Roll Your Own Typed Inference Decision Engine: Jev-style typed decisions from a single forward pass of a local LLM"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=3.0",
+    "jsonschema>=4.26.0",
+    "mlx>=0.29",
+    "mlx-lm>=0.28",
+    "numpy>=2.5.3",
+    "scikit-learn>=1.9.1",
+]

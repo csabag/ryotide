@@ -1,0 +1,37 @@
+{
+ "sst2": {
+  "n": 150,
+  "accuracy": 0.9,
+  "majority": 0.54,
+  "marker_mass": 0.9955,
+  "s": 43.8
+ },
+ "rte": {
+  "n": 150,
+  "accuracy": 0.9333,
+  "majority": 0.5533,
+  "marker_mass": 0.9877,
+  "s": 64.8
+ },
+ "mrpc": {
+  "n": 150,
+  "accuracy": 0.6267,
+  "majority": 0.6067,
+  "marker_mass": 0.9891,
+  "s": 59.4
+ },
+ "qnli": {
+  "n": 150,
+  "accuracy": 0.94,
+  "majority": 0.5067,
+  "marker_mass": 0.9919,
+  "s": 56.8
+ },
+ "cola": {
+  "n": 150,
+  "accuracy": 0.82,
+  "majority": 0.6733,
+  "marker_mass": 0.9922,
+  "s": 40.5
+ }
+}

@@ -1,0 +1,306 @@
+[
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.88,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.8329,
+  "pred_distribution": {
+   "negative": 82,
+   "positive": 118
+  },
+  "seconds": 6.3,
+  "ms_per_example": 31.48,
+  "mean_prompt_tokens": 68.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.855,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7941,
+  "pred_distribution": {
+   "negative": 75,
+   "positive": 125
+  },
+  "seconds": 6.33,
+  "ms_per_example": 31.66,
+  "mean_prompt_tokens": 68.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.905,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7771,
+  "pred_distribution": {
+   "negative": 91,
+   "positive": 109
+  },
+  "seconds": 4.64,
+  "ms_per_example": 23.22,
+  "mean_prompt_tokens": 39.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.895,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.8356,
+  "pred_distribution": {
+   "negative": 105,
+   "positive": 95
+  },
+  "seconds": 4.63,
+  "ms_per_example": 23.15,
+  "mean_prompt_tokens": 39.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.66,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.7697,
+  "pred_distribution": {
+   "yes": 56,
+   "no": 144
+  },
+  "seconds": 9.56,
+  "ms_per_example": 47.79,
+  "mean_prompt_tokens": 121.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.72,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.7483,
+  "pred_distribution": {
+   "yes": 116,
+   "no": 84
+  },
+  "seconds": 9.97,
+  "ms_per_example": 49.83,
+  "mean_prompt_tokens": 121.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.66,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.5866,
+  "pred_distribution": {
+   "yes": 66,
+   "no": 134
+  },
+  "seconds": 8.07,
+  "ms_per_example": 40.33,
+  "mean_prompt_tokens": 92.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.655,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.7352,
+  "pred_distribution": {
+   "yes": 169,
+   "no": 31
+  },
+  "seconds": 7.64,
+  "ms_per_example": 38.22,
+  "mean_prompt_tokens": 92.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.805,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.6415,
+  "pred_distribution": {
+   "negative": 63,
+   "positive": 137
+  },
+  "seconds": 7.09,
+  "ms_per_example": 35.43,
+  "mean_prompt_tokens": 68.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.57,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.694,
+  "pred_distribution": {
+   "negative": 14,
+   "positive": 186
+  },
+  "seconds": 7.04,
+  "ms_per_example": 35.19,
+  "mean_prompt_tokens": 68.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.89,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7861,
+  "pred_distribution": {
+   "negative": 94,
+   "positive": 106
+  },
+  "seconds": 4.91,
+  "ms_per_example": 24.55,
+  "mean_prompt_tokens": 39.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "sst2",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.86,
+  "majority_baseline": 0.5,
+  "mean_margin": 0.7466,
+  "pred_distribution": {
+   "negative": 86,
+   "positive": 114
+  },
+  "seconds": 5.07,
+  "ms_per_example": 25.35,
+  "mean_prompt_tokens": 39.0,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": true,
+  "calibrated": true,
+  "accuracy": 0.735,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.682,
+  "pred_distribution": {
+   "yes": 93,
+   "no": 107
+  },
+  "seconds": 10.08,
+  "ms_per_example": 50.42,
+  "mean_prompt_tokens": 121.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "chat+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": true,
+  "calibrated": false,
+  "accuracy": 0.72,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.7316,
+  "pred_distribution": {
+   "yes": 152,
+   "no": 48
+  },
+  "seconds": 10.1,
+  "ms_per_example": 50.51,
+  "mean_prompt_tokens": 121.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "chat",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": false,
+  "calibrated": true,
+  "accuracy": 0.745,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.5603,
+  "pred_distribution": {
+   "yes": 123,
+   "no": 77
+  },
+  "seconds": 8.53,
+  "ms_per_example": 42.66,
+  "mean_prompt_tokens": 92.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "raw+cal",
+  "kv_bytes_per_token": 12288
+ },
+ {
+  "task": "rte",
+  "n": 200,
+  "chat": false,
+  "calibrated": false,
+  "accuracy": 0.585,
+  "majority_baseline": 0.56,
+  "mean_margin": 0.8478,
+  "pred_distribution": {
+   "yes": 191,
+   "no": 9
+  },
+  "seconds": 8.78,
+  "ms_per_example": 43.9,
+  "mean_prompt_tokens": 92.3,
+  "model": "mlx-community/Qwen2.5-0.5B-Instruct-bf16",
+  "config": "raw",
+  "kv_bytes_per_token": 12288
+ }
+]

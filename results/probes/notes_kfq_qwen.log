@@ -1,0 +1,48 @@
+model=mlx-community/Qwen3.5-4B-MLX-8bit lang=en frame=' (key fact for question "{q}":' budget=3
+rollback identity control: maxdiff 0.0
+[ 1/40] tok   427 notes  1 | base x  notes ok mass 0.998   3.6s  <- notes FIXED
+--- first notes --- "Using only
+[ 2/40] tok   173 notes  2 | base ok notes ok mass 0.997   2.1s
+[ 3/40] tok  2508 notes  4 | base ok notes ok mass 0.997  19.2s
+[ 4/40] tok   284 notes  3 | base ok notes ok mass 0.988   3.0s
+[ 5/40] tok   304 notes  3 | base ok notes ok mass 0.979   3.2s
+[ 6/40] tok   336 notes  2 | base ok notes ok mass 0.986   3.1s
+[ 7/40] tok   472 notes  4 | base x  notes x  mass 0.991   4.7s
+[ 8/40] tok   408 notes  3 | base ok notes ok mass 0.993   3.8s
+[ 9/40] tok  2555 notes 19 | base x  notes x  mass 0.998  19.8s
+[10/40] tok  2418 notes  6 | base ok notes ok mass 0.998  17.3s
+[11/40] tok   152 notes  2 | base ok notes ok mass 0.990   1.7s
+[12/40] tok  2606 notes 16 | base ok notes ok mass 0.996  19.7s
+[13/40] tok    94 notes  0 | base ok notes ok mass 0.981   0.5s
+[14/40] tok   798 notes  3 | base x  notes x  mass 0.990   6.7s
+[15/40] tok  2451 notes 13 | base x  notes x  mass 0.998  20.1s
+[16/40] tok   392 notes  3 | base x  notes x  mass 0.985   3.7s
+[17/40] tok  2576 notes 17 | base ok notes ok mass 0.996  19.6s
+[18/40] tok  2364 notes 10 | base ok notes ok mass 0.996  19.0s
+[19/40] tok   696 notes  3 | base ok notes ok mass 0.996   5.9s
+[20/40] tok   166 notes  2 | base ok notes ok mass 0.988   1.7s
+[21/40] tok   132 notes  2 | base x  notes x  mass 0.991   1.7s
+[22/40] tok  3665 notes  4 | base ok notes ok mass 0.998  28.3s
+[23/40] tok   225 notes  2 | base ok notes ok mass 0.940   2.2s
+[24/40] tok   675 notes  4 | base ok notes ok mass 0.997   5.9s
+[25/40] tok  1803 notes 11 | base ok notes ok mass 0.994  14.9s
+[26/40] tok   231 notes  2 | base ok notes ok mass 0.987   2.1s
+[27/40] tok   413 notes  4 | base ok notes ok mass 0.992   3.7s
+[28/40] tok  3376 notes 19 | base ok notes ok mass 0.998  28.1s
+[29/40] tok   169 notes  1 | base x  notes x  mass 0.998   2.0s
+[30/40] tok  2225 notes 11 | base x  notes ok mass 0.996  18.2s  <- notes FIXED
+[31/40] tok   126 notes  0 | base ok notes ok mass 0.991   0.6s
+[32/40] tok   129 notes  2 | base ok notes ok mass 0.989   1.6s
+[33/40] tok  2395 notes  8 | base x  notes x  mass 0.996  19.0s
+[34/40] tok   255 notes  2 | base x  notes x  mass 0.982   2.4s
+[35/40] tok  2459 notes  8 | base ok notes x  mass 0.998  19.5s  <- notes BROKE
+[36/40] tok   188 notes  2 | base ok notes ok mass 0.995   2.1s
+[37/40] tok   153 notes  2 | base ok notes ok mass 0.983   1.7s
+[38/40] tok  2544 notes 16 | base ok notes ok mass 0.997  19.2s
+[39/40] tok  2189 notes 10 | base ok notes ok mass 0.977  17.4s
+[40/40] tok   189 notes  2 | base ok notes ok mass 0.995   2.1s
+
+notes 228, distinct 127
+arm     acc    mass_mean mass_min  sec/item
+base   0.725  0.9929   0.9689  3.39
+notes  0.750  0.9909   0.9397  9.28

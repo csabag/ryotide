@@ -1,0 +1,68 @@
+{
+ "model": "mlx-community/Qwen2.5-1.5B-Instruct-4bit",
+ "state_tokens": 156,
+ "classifications": [
+  {
+   "q": "Q: Did this incident cause data loss? Answer yes or no.\nA:",
+   "label": "yes",
+   "probs": {
+    "yes": 0.5486735105514526,
+    "no": 0.45132651925086975
+   },
+   "margin": 0.09734699130058289
+  },
+  {
+   "q": "Q: Were any customer requests dropped? Answer yes or no.\nA:",
+   "label": "yes",
+   "probs": {
+    "yes": 0.5755879878997803,
+    "no": 0.42441198229789734
+   },
+   "margin": 0.15117600560188293
+  },
+  {
+   "q": "Q: Did a human have to intervene? Answer yes or no.\nA:",
+   "label": "yes",
+   "probs": {
+    "yes": 0.9697853922843933,
+    "no": 0.030214590951800346
+   },
+   "margin": 0.939570801332593
+  },
+  {
+   "q": "Q: Are follow-up actions recorded? Answer yes or no.\nA:",
+   "label": "yes",
+   "probs": {
+    "yes": 0.9810219407081604,
+    "no": 0.018978040665388107
+   },
+   "margin": 0.9620439000427723
+  },
+  {
+   "q": "Q: Should this incident be escalated to a postmortem? Answer yes or no.\nA:",
+   "label": "yes",
+   "probs": {
+    "yes": 0.930962085723877,
+    "no": 0.06903792917728424
+   },
+   "margin": 0.8619241565465927
+  }
+ ],
+ "injection_ab": {
+  "json": {
+   "tokens": 96,
+   "decode_tps": 76.1,
+   "text": "- The incident involved a significant backlog in the system's queue, leading to a prolonged period of service disruption. The recovery process, while successful, highlights the need for proactive measures to prevent such issues in the future. The alarm threshold should be raised to better manage the queue, and a watchdog mechanism should be implemented to automatically restart stalled workers. These actions are crucial to maintaining system reliability and efficiency. - The incident underscores the importance of monitoring and managing system resources effectively to avoid such disruptions"
+  },
+  "prose": {
+   "tokens": 96,
+   "decode_tps": 77.2,
+   "text": "- The incident involved a significant backlog that led to a prolonged downtime, affecting both throughput and customer-facing latency. The recovery process was not immediate, and the impact on the system's stability and reliability is noteworthy. Given the severity and the potential for future incidents, a postmortem analysis is essential to understand the root cause, improve the system's resilience, and prevent recurrence. The current actions taken by the on-call team are commendable, but a formal postmortem would provide"
+  },
+  "bare": {
+   "tokens": 96,
+   "decode_tps": 74.9,
+   "text": "- The incident involved a significant backlog that led to a prolonged downtime, affecting both throughput and customer-facing latency. The recovery process was not immediate, highlighting the need for better monitoring and proactive measures to prevent such issues. - The incident underscores the importance of setting alarm thresholds appropriately to avoid situations where the system is overloaded. - The addition of a watchdog feature to automatically restart stalled workers is crucial to maintaining system stability and efficiency. - The incident highlights the need for a more robust monitoring and"
+  }
+ }
+}

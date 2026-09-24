@@ -1,0 +1,38 @@
+{
+ "openjev-razorback16": {
+  "gpu": "RunPod RTX PRO 4500 Blackwell 32 GB (EU-RO-1)",
+  "pod": "v1d9uha0lh4fiz",
+  "usd_per_hour": 0.72,
+  "transport": "from a Hetzner server in Germany over the internet to the pod's public TCP port (plain HTTP, one connection per request); model loaded before timing"
+ },
+ "semif-qwen3.5-4b": {
+  "gpu": "RunPod RTX PRO 4500 Blackwell 32 GB (EU-RO-1)",
+  "pod": "v1d9uha0lh4fiz",
+  "usd_per_hour": 0.72,
+  "transport": "from a Hetzner server in Germany over the internet to the pod's public TCP port (plain HTTP, one connection per request) through a thin transport around the author's library; model loaded before timing"
+ },
+ "open-alternative-jev": {
+  "gpu": "RunPod RTX PRO 4500 Blackwell 32 GB (EU-RO-1)",
+  "pod": "v1d9uha0lh4fiz",
+  "usd_per_hour": 0.72,
+  "transport": "from a Hetzner server in Germany over the internet to the pod's public TCP port (plain HTTP, one connection per request) through a thin transport around the author's library; model loaded before timing"
+ },
+ "open-alternative-jev-yesfirst": {
+  "gpu": "RunPod RTX PRO 4500 Blackwell 32 GB (EU-RO-1)",
+  "pod": "v1d9uha0lh4fiz",
+  "usd_per_hour": 0.72,
+  "transport": "as open-alternative-jev"
+ },
+ "nimble-9b": {
+  "gpu": "RunPod A40 48 GB (EU-SE-1)",
+  "pod": "stqy2bs9yoxzr6",
+  "usd_per_hour": 0.49,
+  "transport": "from a Hetzner server in Germany over the internet to the pod's public TCP port (plain HTTP, one connection per request); model loaded before timing. An earlier run through an SSH tunnel (RunPod's HTTPS proxy rejected the harness with a Cloudflare bot check) is kept as evidence and superseded."
+ },
+ "system-one-sg": {
+  "gpu": "RunPod RTX PRO 4500 Blackwell 32 GB (EU-RO-1)",
+  "pod": "v1d9uha0lh4fiz",
+  "usd_per_hour": 0.72,
+  "transport": "from a Hetzner server in Germany over the internet to the pod's public TCP port (plain HTTP, one connection per request) through a thin transport around the author's library; model loaded before timing"
+ }
+}

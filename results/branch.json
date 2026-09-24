@@ -1,0 +1,184 @@
+{
+ "hardware": "Mac mini Mac16,10 base M4, 10-core CPU (4P+6E), 24GB",
+ "model": "mlx-community/Qwen2.5-0.5B-Instruct-4bit",
+ "kv_bytes_per_token": 12288,
+ "state_len": 6000,
+ "state_prefill_seconds": 1.9677,
+ "state_prefill_tok_per_s": 3049.3,
+ "state_kv_mb": 73.73,
+ "marginal_question_ms": 25.41,
+ "projection_at_6k": {
+  "1": {
+   "kv_bytes_per_token": 12288,
+   "state_len": 6000,
+   "per_branch_mb": 73.728,
+   "n_branches": 1,
+   "fork_total_mb": 73.728,
+   "trim_total_mb": 73.728,
+   "lazy_total_mb": 147.456
+  },
+  "5": {
+   "kv_bytes_per_token": 12288,
+   "state_len": 6000,
+   "per_branch_mb": 73.728,
+   "n_branches": 5,
+   "fork_total_mb": 368.64,
+   "trim_total_mb": 73.728,
+   "lazy_total_mb": 147.456
+  },
+  "10": {
+   "kv_bytes_per_token": 12288,
+   "state_len": 6000,
+   "per_branch_mb": 73.728,
+   "n_branches": 10,
+   "fork_total_mb": 737.28,
+   "trim_total_mb": 73.728,
+   "lazy_total_mb": 147.456
+  },
+  "25": {
+   "kv_bytes_per_token": 12288,
+   "state_len": 6000,
+   "per_branch_mb": 73.728,
+   "n_branches": 25,
+   "fork_total_mb": 1843.2,
+   "trim_total_mb": 73.728,
+   "lazy_total_mb": 147.456
+  },
+  "50": {
+   "kv_bytes_per_token": 12288,
+   "state_len": 6000,
+   "per_branch_mb": 73.728,
+   "n_branches": 50,
+   "fork_total_mb": 3686.4,
+   "trim_total_mb": 73.728,
+   "lazy_total_mb": 147.456
+  }
+ },
+ "rows": [
+  {
+   "n": 1,
+   "state_len": 6000,
+   "trim": {
+    "seconds": 0.0241,
+    "ms_per_question": 24.12,
+    "peak_alloc_mb": 46.0,
+    "retained_branch_kv_mb": 0.0,
+    "agrees_with_trim": true
+   },
+   "fork": {
+    "seconds": 0.0254,
+    "ms_per_question": 25.38,
+    "peak_alloc_mb": 115.5,
+    "retained_branch_kv_mb": 73.9,
+    "agrees_with_trim": true
+   },
+   "lazy": {
+    "seconds": 0.0494,
+    "ms_per_question": 49.39,
+    "peak_alloc_mb": 115.5,
+    "retained_branch_kv_mb": 73.9,
+    "agrees_with_trim": true
+   }
+  },
+  {
+   "n": 5,
+   "state_len": 6000,
+   "trim": {
+    "seconds": 0.1203,
+    "ms_per_question": 24.06,
+    "peak_alloc_mb": 47.4,
+    "retained_branch_kv_mb": 0.0,
+    "agrees_with_trim": true
+   },
+   "fork": {
+    "seconds": 0.128,
+    "ms_per_question": 25.61,
+    "peak_alloc_mb": 425.0,
+    "retained_branch_kv_mb": 369.6,
+    "agrees_with_trim": true
+   },
+   "lazy": {
+    "seconds": 0.145,
+    "ms_per_question": 29.0,
+    "peak_alloc_mb": 115.5,
+    "retained_branch_kv_mb": 73.9,
+    "agrees_with_trim": true
+   }
+  },
+  {
+   "n": 10,
+   "state_len": 6000,
+   "trim": {
+    "seconds": 0.24,
+    "ms_per_question": 24.0,
+    "peak_alloc_mb": 47.4,
+    "retained_branch_kv_mb": 0.0,
+    "agrees_with_trim": true
+   },
+   "fork": {
+    "seconds": 0.2544,
+    "ms_per_question": 25.44,
+    "peak_alloc_mb": 810.3,
+    "retained_branch_kv_mb": 739.3,
+    "agrees_with_trim": true
+   },
+   "lazy": {
+    "seconds": 0.2644,
+    "ms_per_question": 26.44,
+    "peak_alloc_mb": 115.5,
+    "retained_branch_kv_mb": 73.9,
+    "agrees_with_trim": true
+   }
+  },
+  {
+   "n": 25,
+   "state_len": 6000,
+   "trim": {
+    "seconds": 0.6356,
+    "ms_per_question": 25.42,
+    "peak_alloc_mb": 47.4,
+    "retained_branch_kv_mb": 0.0,
+    "agrees_with_trim": true
+   },
+   "fork": {
+    "seconds": 0.7425,
+    "ms_per_question": 29.7,
+    "peak_alloc_mb": 1966.4,
+    "retained_branch_kv_mb": 1848.2,
+    "agrees_with_trim": true
+   },
+   "lazy": {
+    "seconds": 0.7098,
+    "ms_per_question": 28.39,
+    "peak_alloc_mb": 115.5,
+    "retained_branch_kv_mb": 73.9,
+    "agrees_with_trim": true
+   }
+  },
+  {
+   "n": 50,
+   "state_len": 6000,
+   "trim": {
+    "seconds": 1.3439,
+    "ms_per_question": 26.88,
+    "peak_alloc_mb": 47.4,
+    "retained_branch_kv_mb": 0.0,
+    "agrees_with_trim": true
+   },
+   "fork": {
+    "seconds": 1.4289,
+    "ms_per_question": 28.58,
+    "peak_alloc_mb": 3893.1,
+    "retained_branch_kv_mb": 3696.5,
+    "agrees_with_trim": true
+   },
+   "lazy": {
+    "seconds": 1.3615,
+    "ms_per_question": 27.23,
+    "peak_alloc_mb": 115.5,
+    "retained_branch_kv_mb": 73.9,
+    "agrees_with_trim": true
+   }
+  }
+ ]
+}
