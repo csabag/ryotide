@@ -4,29 +4,37 @@ This runs the PyTorch backend on an NVIDIA GPU inside WSL2, checks it against th
 reference results in this repo, and serves it the way JevBench measures entrants.
 Written for a 12 GB card; larger cards can skip the memory options.
 
-**Status:** the PyTorch path matches MLX on Apple Silicon (Gemma 4 E4B 111/111 hard
-decisions, Qwen3.5-4B 40/40). The CUDA-specific parts — bitsandbytes `int8` / `nf4`
-and the `flash-linear-attention` kernels for Qwen — have **not been run yet**. This
-guide is how we find out.
+**Status: measured on CUDA.** Every configuration below was run on an NVIDIA RTX PRO
+6000 Blackwell (a 24 GB MIG slice) under Ubuntu 24.04, installed exactly as in
+step 3. The PyTorch path matches the reference: Gemma 4 E4B bf16 on CUDA agrees with
+PyTorch on Apple on 110/111 hard decisions, Qwen3.5-4B bf16 on 40/40. A 12 GB card was
+not available, so "fits 12 GB" below means *measured peak* under 12 GB, not a run on
+one — leave headroom for Windows and the CUDA context (~0.5–1 GB).
 
-## 1. What fits in 12 GB
+## 1. What fits in 12 GB — measured
 
-| model | options | weights on GPU | fits 12 GB |
-|---|---|---|---|
-| Gemma 4 E4B | bf16 | ~16 GB | no |
-| Gemma 4 E4B | `--quant int8` | ~10.8 GB | too tight |
-| **Gemma 4 E4B** | **`--quant int8 --low-vram`** | **~5–6 GB** | **yes (recommended)** |
-| Gemma 4 E4B | `--quant nf4 --low-vram` | ~3–4 GB | yes (4-bit, less faithful) |
-| Qwen3.5-4B | bf16 | ~8–9 GB | yes, if nothing else uses the GPU |
-| **Qwen3.5-4B** | **`--quant int8`** | **~5 GB** | **yes (recommended)** |
+Peak GPU memory over a whole hard-tier run, including loading and the longest prompt
+(~3,700 tokens). Accuracy is the 111 public hard decisions (MLX 8-bit reference in
+brackets).
 
-Why Gemma needs `--low-vram`: 2.8 B of its 7.9 B parameters are per-layer embedding
-tables, and bitsandbytes quantizes Linear layers only, so they would stay in bf16 on
-the GPU. `--low-vram` keeps those tables — a lookup of a few rows per token — plus
-the unused audio and vision towers in system RAM. On Apple MPS this offload was
-checked to change nothing: 20/20 identical decisions, zero probability difference.
+| model | options | peak GPU | peak system RAM | hard acc | fits 12 GB |
+|---|---|---|---|---|---|
+| **Qwen3.5-4B** | **`--quant int8`** | **5.7 GB** | 9.5 GB | 76/111 (72) | **yes — recommended** |
+| Qwen3.5-4B | bf16 (no flag) | 9.1 GB | 9.4 GB | 73/111 (72) | yes |
+| **Gemma 4 E4B** | **`--quant nf4`** | **10.2 GB** | 16.9 GB | 68/111 (68) | **yes, tight** |
+| Gemma 4 E4B | `--quant int8` | 12.3 GB | 16.6 GB | 67/111 (68) | no |
+| Gemma 4 E4B | bf16 | ~16 GB | | 70/111 | no |
 
-Add ~1 GB for the CUDA context and activations. Close other GPU-heavy programs.
+- **Qwen int8** is the comfortable choice: 95.5% of decisions identical to MLX 8-bit.
+- **Gemma nf4** fits, but 4-bit is lossier: the same 68/111, yet 12 of 111 individual
+  decisions differ from MLX 8-bit (89% identical). Through the wire it scored 183/231
+  against MLX 8-bit's 182, 95% of decisions identical.
+- **`--low-vram` does not help on a 12 GB card.** It keeps Gemma's per-layer embedding
+  tables (2.8 B parameters) in system RAM and runs their lookup there — running memory
+  drops to ~6 GB, decisions stay identical (111/111) — but `transformers` still passes
+  those weights through the GPU while *loading*, so the load peak stays ~12 GB, and
+  system RAM peaks at ~28 GB. Useful only where loading fits and running memory does
+  not; not for this card.
 
 ## 2. One-time WSL setup
 
@@ -80,16 +88,17 @@ files are downloaded even for `int8` — quantization happens while loading. Set
 
 Every command writes `results/jevbench/<tag>/results.jsonl`.
 
-**Gemma 4 E4B, 8-bit, low VRAM** (the configuration we would submit):
+**Gemma 4 E4B, 4-bit** (the Gemma configuration that fits 12 GB):
 
 ```bash
 uv run python bench/run_jevbench.py --backend torch --device cuda \
   --model google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2 \
-  --quant int8 --low-vram \
+  --quant nf4 \
   --tasks vendor/jevbench/datasets/public/hard.jsonl \
-  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-gemma-int8-hard
+  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-gemma-nf4-hard-mine
 
-uv run python bench/compare_runs.py gemma4-rep2-pin2 cuda-gemma-int8-hard   # vs MLX 8-bit, same echo
+uv run python bench/compare_runs.py cuda-gemma-nf4-hard cuda-gemma-nf4-hard-mine   # vs our CUDA nf4 run
+uv run python bench/compare_runs.py gemma4-rep2-pin2   cuda-gemma-nf4-hard-mine   # vs MLX 8-bit
 ```
 
 The echo (question repeated after the state) is on for every question by default.
@@ -100,8 +109,8 @@ bf16 with the old gate — only on a card with ~18 GB free, since bf16 is ~16 GB
 uv run python bench/run_jevbench.py --backend torch --device cuda \
   --model google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2 \
   --echo-min-options 2 --tasks vendor/jevbench/datasets/public/hard.jsonl \
-  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-gemma-bf16-gated-hard
-uv run python bench/compare_runs.py torch-mps-gemma4-e4b-bf16-hard cuda-gemma-bf16-gated-hard
+  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-gemma-bf16-gated-hard-mine
+uv run python bench/compare_runs.py torch-mps-gemma4-e4b-bf16-hard cuda-gemma-bf16-gated-hard-mine
 ```
 
 **Qwen3.5-4B, 8-bit:**
@@ -111,9 +120,10 @@ uv run python bench/run_jevbench.py --backend torch --device cuda \
   --model Qwen/Qwen3.5-4B --revision 851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a \
   --quant int8 \
   --tasks vendor/jevbench/datasets/public/hard.jsonl \
-  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-qwen-int8-hard
+  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-qwen-int8-hard-mine
 
-uv run python bench/compare_runs.py 3.5-4b-rep2 cuda-qwen-int8-hard                  # vs MLX 8-bit, same echo
+uv run python bench/compare_runs.py cuda-qwen-int8-hard cuda-qwen-int8-hard-mine   # vs our CUDA int8 run
+uv run python bench/compare_runs.py 3.5-4b-rep2         cuda-qwen-int8-hard-mine   # vs MLX 8-bit
 ```
 
 The first Qwen run compiles the `flash-linear-attention` Triton kernels, so the
@@ -139,7 +149,7 @@ that, start the server in one terminal:
 ```bash
 PYTHONPATH=src uv run python -m ryotide.server --backend torch --device cuda \
   --model google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2 \
-  --quant int8 --low-vram
+  --quant nf4
 # wait for: ryotide ready ...
 curl -s localhost:8778/health             # engine, revision, prompt hash, quant, offloaded modules
 ```
@@ -147,17 +157,18 @@ curl -s localhost:8778/health             # engine, revision, prompt hash, quant
 and run all 231 public decisions from a second terminal:
 
 ```bash
-cd vendor/jevbench && mkdir -p ../../results/jevbench/cuda-wire-gemma-int8
+cd vendor/jevbench && mkdir -p ../../results/jevbench/cuda-wire-gemma-nf4-mine
 PYTHONPATH=. uv run python -m jevbench.cli run --adapter typesafe \
   --endpoint http://127.0.0.1:8778 --key-env '' --model ryotide --reserve-usd 0 \
   --tasks datasets/public/original.jsonl,datasets/public/easy.jsonl,datasets/public/hard.jsonl \
-  --results ../../results/jevbench/cuda-wire-gemma-int8/results.jsonl \
-  --ledger ../../results/jevbench/cuda-wire-gemma-int8/ledger.jsonl --raw-dir /tmp/raw
-cd ../.. && uv run python bench/compare_runs.py wire-gemma4-e4b-8bit-echoall cuda-wire-gemma-int8
+  --results ../../results/jevbench/cuda-wire-gemma-nf4-mine/results.jsonl \
+  --ledger ../../results/jevbench/cuda-wire-gemma-nf4-mine/ledger.jsonl --raw-dir /tmp/raw
+cd ../.. && uv run python bench/compare_runs.py cuda-wire-gemma-nf4 cuda-wire-gemma-nf4-mine
 ```
 
-Reference: 182/231 through the wire on MLX 8-bit with the default settings (echo on
-every question, natural option order).
+Reference: 183/231 through the wire on CUDA nf4 (`cuda-wire-gemma-nf4`), 182/231 on
+MLX 8-bit, both with the default settings (echo on every question, natural option
+order).
 
 ## 6. What to send back
 
@@ -175,7 +186,7 @@ A pull request with the `results/jevbench/cuda-*` directories is the easiest way
 | symptom | fix |
 |---|---|
 | `torch.cuda.is_available()` is `False` | `nvidia-smi` inside WSL must work first; update the Windows driver; never install a Linux NVIDIA driver in WSL |
-| `CUDA out of memory` while loading | add `--low-vram`; or use `--quant nf4`; close other GPU programs |
+| `CUDA out of memory` while loading | Gemma: `--quant nf4` (int8 needs ~12.3 GB); Qwen: `--quant int8`; close other GPU programs (`--low-vram` does not lower the load peak) |
 | process killed while loading (no error) | WSL ran out of system RAM: raise `memory=` in `.wslconfig`, then `wsl --shutdown` |
 | bitsandbytes: "CUDA setup failed" / cannot find `libcuda.so` | `export LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH` |
 | Qwen very slow | `flash-linear-attention` missing or failed to build: `uv sync --extra cuda` again and read its output |

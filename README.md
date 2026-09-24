@@ -267,11 +267,14 @@ PYTHONPATH=. python -m jevbench.cli run --adapter typesafe --endpoint http://127
 
 The server has no authentication; it binds to loopback by default.
 
-**Smaller GPUs.** `--quant int8|nf4` (bitsandbytes, CUDA) and `--low-vram` (keep
-Gemma 4's 2.8 B-parameter per-layer embedding tables and its unused audio / vision
-towers in system RAM) bring Gemma 4 E4B from ~16 GB to ~5–6 GB of GPU memory; the
-offload is bit-identical on MPS (20/20 decisions). Qwen3.5-4B runs on the same torch
-path and matches MLX on 40/40 hard decisions. **Windows / WSL2 + CUDA:** step-by-step
+**On CUDA — measured** (RTX PRO 6000 Blackwell, Ubuntu 24.04, clean install): the
+torch path matches the reference (Gemma 4 E4B bf16: 110/111 hard decisions identical
+to PyTorch on Apple; Qwen3.5-4B bf16: 40/40) at 0.14–0.22 s per decision, and the full
+wire test passes (231/231 answered, 183/231 correct with Gemma nf4). Peak GPU memory:
+Qwen3.5-4B `--quant int8` 5.7 GB, bf16 9.1 GB; Gemma 4 E4B `--quant nf4` 10.2 GB,
+`--quant int8` 12.3 GB. `--low-vram` runs Gemma's per-layer embedding lookup from system
+RAM (running memory ~6 GB, decisions identical) but does not lower the ~12 GB *load*
+peak, so it does not make Gemma fit a 12 GB card. **Windows / WSL2 + CUDA:** step-by-step
 setup, commands and expected numbers in [`docs/WSL-CUDA.md`](docs/WSL-CUDA.md);
 `bench/compare_runs.py <reference> <new>` checks a run against ours.
 

@@ -13,11 +13,14 @@ Memory options, for GPUs smaller than the bf16 model (Gemma 4 E4B is ~16 GB):
 
   quant="int8" | "nf4"   bitsandbytes weight quantization (CUDA only). It
                          quantizes Linear layers; embeddings stay in bf16.
-  low_vram=True          keep modules that are cheap to run from system RAM on the
-                         CPU: Gemma 4's per-layer embedding tables (2.8 B params,
-                         a lookup of a few rows per token) and its audio / vision
-                         towers (never used for text). Measured on Gemma 4 E4B:
-                         int8 alone ~10.8 GB of weights, int8 + low_vram ~5-6 GB.
+  low_vram=True          keep Gemma 4's per-layer embedding tables (2.8 B params)
+                         in system RAM and run their lookup there; audio / vision
+                         towers (never used for text) stay offloaded. Measured on
+                         CUDA, Gemma 4 E4B int8: running memory 12.1 -> 6.0 GB with
+                         decisions identical, but the LOAD peak stays ~12 GB --
+                         transformers passes offloaded weights through the GPU while
+                         loading -- and system RAM peaks ~28 GB. It does not make
+                         Gemma fit a 12 GB card; --quant nf4 does (10.2 GB peak).
 """
 from __future__ import annotations
 
@@ -77,6 +80,48 @@ class TorchClassifier:
             self.model = AutoModelForCausalLM.from_pretrained(model_id, **kwargs).to(self.device).eval()
         self.offloaded = sorted({k for k, v in (getattr(self.model, "hf_device_map", None) or {}).items()
                                  if v == "cpu"})
+        self.cpu_lookups = []
+        if low_vram:
+            self._run_embeddings_on_cpu(model_id, revision)
+
+    # accelerate treats "cpu" in a device map as offloaded STORAGE: the weights are
+    # copied to the GPU to execute. For a 5.6 GB embedding table that means a 5.6 GB
+    # spike on every forward pass -- measured on CUDA: 5.3 GB resident, 11.2 GB peak.
+    # An embedding is a lookup, so run it where the table lives: rebuild the module in
+    # system RAM from the checkpoint, send it token ids, move only the rows back.
+    CPU_LOOKUP_MODULES = ("model.language_model.embed_tokens_per_layer",)
+
+    def _run_embeddings_on_cpu(self, model_id, revision):
+        import json as _json
+        from huggingface_hub import hf_hub_download
+        from safetensors import safe_open
+        torch = self.torch
+        out_dev = torch.device("cuda", 0) if self.device == "cuda" else torch.device(self.device)
+        try:
+            index = hf_hub_download(model_id, "model.safetensors.index.json", revision=revision)
+            weight_files = _json.load(open(index))["weight_map"]
+        except Exception:
+            weight_files = None
+        for name in self.CPU_LOOKUP_MODULES:
+            if name not in self.offloaded:
+                continue
+            parent_name, attr = name.rsplit(".", 1)
+            parent = self.model.get_submodule(parent_name)
+            old = getattr(parent, attr)   # left as is: detaching its offload hook would
+                                          # materialise the old table on the GPU
+            key = f"{name}.weight"
+            fname = weight_files[key] if weight_files else "model.safetensors"
+            with safe_open(hf_hub_download(model_id, fname, revision=revision), framework="pt") as f:
+                weight = f.get_tensor(key).to(self.dtype)
+            new = type(old)(weight.shape[0], weight.shape[1], old.padding_idx,
+                            getattr(old, "scalar_embed_scale", 1.0))
+            new.weight = torch.nn.Parameter(weight, requires_grad=False)
+            new.to("cpu").eval()
+            inner = new.forward
+            new.forward = lambda ids, _f=inner, _d=out_dev: _f(ids.to("cpu")).to(_d)
+            setattr(parent, attr, new)
+            del old
+            self.cpu_lookups.append(name)
 
     def _device_map(self, AutoConfig, AutoModelForCausalLM, model_id, revision) -> dict:
         """Everything on the accelerator, except LOW_VRAM_CPU_MODULES when low_vram."""
