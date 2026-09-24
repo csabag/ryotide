@@ -20,6 +20,36 @@ published board.
 
 **Dashboard:** https://claude.ai/artifact/MZuHA6zN1gFucrGaPRyf8t
 
+## The two entries
+
+Both are frozen public models, read in one forward pass, with no generated tokens:
+the question is asked after the state and echoed once (S/Q/Q), the answer is read as
+the next-token distribution over the option markers after `Answer: **`, masked and
+renormalised. Nothing is trained. Each entry is one pinned preset.
+
+| entry | weights (revision) | temperature | public 231, via the wire | hard | hard ECE |
+|---|---|---|---|---|---|
+| **RYOTIDE-Qwen** | `Qwen/Qwen3.5-4B` (`851bf6e8`), Apache-2.0 | 1.0 | 184/231 (0.797) | 0.658 | 0.076 |
+| **RYOTIDE-Gemma** | `google/gemma-4-E4B-it` (`ee0ef602`), Apache-2.0 | 1.924 | 185/231 (0.801) | 0.613 | 0.189 |
+
+Measured on CUDA (RTX PRO 6000 Blackwell, bf16) through JevBench's stock `typesafe`
+adapter, all 231 answered, ~60 ms median per decision. The temperature was fit on the
+synthetic typed-decision set and adopted only when it improved held-out calibration
+(`results/calibration/`): it lowers Gemma's hard-tier ECE from 0.289 to 0.189 without
+changing a single decision, and was rejected for Qwen, which is already calibrated.
+
+```bash
+docker build -t ryotide .
+docker run --gpus all -p 127.0.0.1:8778:8778 -v ryotide-hf:/root/.cache/huggingface \
+  ryotide --preset ryotide-qwen          # or --preset ryotide-gemma
+# without Docker:
+uv sync --extra cuda && PYTHONPATH=src uv run python -m ryotide.server --preset ryotide-qwen
+```
+
+The Dockerfile's steps are the install verified on the CUDA pod; the image itself has
+not yet been built. Official v1.4 ranks need the maintainers' run on 308 sealed
+decisions, which nothing here includes.
+
 ## Results
 
 Best capability **75.0 intelligence** (Gemma 4 E4B + the question echo, gated to > 2 options) and

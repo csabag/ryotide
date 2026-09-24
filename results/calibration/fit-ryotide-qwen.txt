@@ -1,0 +1,7 @@
+fitted on cuda-qwen-bf16-syn: 300 items (even scenarios);  T = 1.592
+set                                   n   NLL T=1    NLL T   ECE T=1   ECE T
+cuda-qwen-bf16-syn (fit half)       300     0.829    0.780     0.162   0.087
+cuda-qwen-bf16-syn (check half)     300     0.665    0.698     0.029   0.084
+
+decision: check-half ECE 0.029 -> 0.084: KEEP T = 1 (fit does not generalise)
+T = 1.000

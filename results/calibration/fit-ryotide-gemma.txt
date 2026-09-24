@@ -1,0 +1,7 @@
+fitted on cuda-gemma-bf16-syn: 300 items (even scenarios);  T = 1.924
+set                                   n   NLL T=1    NLL T   ECE T=1   ECE T
+cuda-gemma-bf16-syn (fit half)      300     0.613    0.508     0.110   0.076
+cuda-gemma-bf16-syn (check half)    300     0.810    0.613     0.124   0.070
+
+decision: check-half ECE 0.124 -> 0.070: ADOPT the fitted T
+T = 1.924
