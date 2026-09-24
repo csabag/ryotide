@@ -23,8 +23,9 @@ ap.add_argument("--idk", action="store_true", help="offer an unscored 'cannot de
 ap.add_argument("--idk-first", action="store_true", help="place the escape hatch at slot A")
 ap.add_argument("--repeat", type=int, default=1, help="emit the question body N times (echo trick)")
 ap.add_argument("--prefix", default=None, help="pin the answer prefix (skips calibration)")
-ap.add_argument("--echo-min-options", type=int, default=2,
-                help="echo the question only when there are MORE options than this (0/1 = always)")
+ap.add_argument("--echo-min-options", type=int, default=0,
+                help="echo only when there are MORE options than this (default 0 = always; "
+                     "2 reproduces the earlier gated runs)")
 ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
 ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
 ap.add_argument("--revision", default=None, help="pin the model revision (torch)")
@@ -75,6 +76,13 @@ runner = Runner(ad, Ledger(f"{out}/ledger.jsonl", cap_usd=1000.0), raw_dir=raw,
                 default_reserve_usd=0.0)  # local weights: no provider tariff to reserve against
 records = runner.run_all(tasks, progress_every=25, results_path=f"{out}/results.jsonl")
 s = summarize(tasks, records)
+if a.backend == "torch":
+    import torch
+    if torch.cuda.is_available():
+        # Peak GPU memory over the whole run (weights + activations), the number
+        # that decides whether a configuration fits a given card.
+        s["cuda_peak_gb"] = round(torch.cuda.max_memory_allocated() / 1e9, 2)
+        s["cuda_device"] = torch.cuda.get_device_name(0)
 json.dump(s, open(f"{out}/summary.json", "w"), indent=1, default=str)
 
 ok = [r for r in records if r["ok"]]
@@ -90,4 +98,6 @@ for r in records:
     d = fam.setdefault(r["family"], [0, 0]); d[1] += 1; d[0] += bool(r["correct"])
 for k, (c, n) in sorted(fam.items()):
     print(f"    {k:10s} {c}/{n} = {c/n:.3f}")
+if s.get("cuda_peak_gb") is not None:
+    print(f"  CUDA peak memory {s['cuda_peak_gb']} GB on {s['cuda_device']}")
 print(f"  -> {out}/summary.json")

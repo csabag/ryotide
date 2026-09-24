@@ -89,8 +89,19 @@ uv run python bench/run_jevbench.py --backend torch --device cuda \
   --tasks vendor/jevbench/datasets/public/hard.jsonl \
   --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-gemma-int8-hard
 
-uv run python bench/compare_runs.py gemma4-repcond        cuda-gemma-int8-hard   # vs MLX 8-bit
-uv run python bench/compare_runs.py torch-mps-gemma4-e4b-bf16-hard cuda-gemma-int8-hard   # vs torch bf16
+uv run python bench/compare_runs.py gemma4-rep2-pin2 cuda-gemma-int8-hard   # vs MLX 8-bit, same echo
+```
+
+The echo (question repeated after the state) is on for every question by default.
+To check CUDA against our PyTorch-on-Apple run, which predates that default, rerun
+bf16 with the old gate — only on a card with ~18 GB free, since bf16 is ~16 GB:
+
+```bash
+uv run python bench/run_jevbench.py --backend torch --device cuda \
+  --model google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2 \
+  --echo-min-options 2 --tasks vendor/jevbench/datasets/public/hard.jsonl \
+  --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-gemma-bf16-gated-hard
+uv run python bench/compare_runs.py torch-mps-gemma4-e4b-bf16-hard cuda-gemma-bf16-gated-hard
 ```
 
 **Qwen3.5-4B, 8-bit:**
@@ -102,7 +113,7 @@ uv run python bench/run_jevbench.py --backend torch --device cuda \
   --tasks vendor/jevbench/datasets/public/hard.jsonl \
   --orders 1 --repeat 2 --prefix 'Answer: **' --marker '{}' --tag cuda-qwen-int8-hard
 
-uv run python bench/compare_runs.py 3.5-4b-repcond cuda-qwen-int8-hard               # vs MLX 8-bit
+uv run python bench/compare_runs.py 3.5-4b-rep2 cuda-qwen-int8-hard                  # vs MLX 8-bit, same echo
 ```
 
 The first Qwen run compiles the `flash-linear-attention` Triton kernels, so the
@@ -114,8 +125,9 @@ so do not expect bit-identical results. `compare_runs.py` prints a verdict:
 
 - `MATCH` — identical decisions. Unlikely with `int8`; expected with bf16.
 - `CLOSE` — ≥ 90% identical decisions and every marker mass ≥ 0.9. **This is a pass.**
-  Accuracy should be within a few items of the reference (Gemma hard 71/111 on MLX
-  8-bit, 70/111 in bf16; Qwen hard 71/111 on MLX 8-bit).
+  Accuracy should be within a few items of the reference (hard tier, echo on every
+  question: Gemma 68/111 and Qwen 72/111 on MLX 8-bit; the gated bf16 check: Gemma
+  70/111 on PyTorch/Apple).
 - `INVESTIGATE` — below 90% agreement or a marker mass under 0.9: the read position
   or the weights are not what we think. Send us the output.
 
@@ -141,14 +153,16 @@ PYTHONPATH=. uv run python -m jevbench.cli run --adapter typesafe \
   --tasks datasets/public/original.jsonl,datasets/public/easy.jsonl,datasets/public/hard.jsonl \
   --results ../../results/jevbench/cuda-wire-gemma-int8/results.jsonl \
   --ledger ../../results/jevbench/cuda-wire-gemma-int8/ledger.jsonl --raw-dir /tmp/raw
-cd ../.. && uv run python bench/compare_runs.py wire-gemma4-e4b-8bit-natural cuda-wire-gemma-int8
+cd ../.. && uv run python bench/compare_runs.py wire-gemma4-e4b-8bit-echoall cuda-wire-gemma-int8
 ```
 
-Reference: 185/231 through the wire on MLX 8-bit.
+Reference: 182/231 through the wire on MLX 8-bit with the default settings (echo on
+every question, natural option order).
 
 ## 6. What to send back
 
-- `results/jevbench/cuda-*/results.jsonl` (and `summary.json` where written)
+- `results/jevbench/cuda-*/results.jsonl` and `summary.json` (the runner records
+  peak GPU memory there as `cuda_peak_gb`, and prints it at the end)
 - the full output of each `compare_runs.py`
 - `curl -s localhost:8778/health` from the server run
 - `nvidia-smi` and

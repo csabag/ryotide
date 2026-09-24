@@ -113,7 +113,7 @@ class Engine:
         self.lock = threading.Lock()
         self.config = {"orders": a.orders, "repeat": a.repeat, "answer_prefix": a.prefix,
                        "marker_pattern": a.marker, "instruction": DEFAULT_INSTRUCTION,
-                       "layout": "state / question / question (echo only when > 2 options)",
+                       "layout": "state / question / question (echo always)",
                        "temperature": 1.0, "option_order": a.option_order}
         self.prompt_hash = hashlib.sha256(json.dumps(self.config, sort_keys=True)
                                           .encode()).hexdigest()[:12]

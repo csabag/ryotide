@@ -22,7 +22,7 @@ published board.
 
 ## Results
 
-Best capability **75.0 intelligence** (Gemma 4 E4B + conditional repetition) and
+Best capability **75.0 intelligence** (Gemma 4 E4B + the question echo, gated to > 2 options) and
 best composite **74.8** (Qwen3.5-4B 8-bit), both measured with our local runner.
 Measured head to head, Jev reaches 82.2 intelligence and 87.0 composite on the same
 three tiers.
@@ -30,10 +30,10 @@ three tiers.
 > **Correction — read this before comparing with the board.** The numbers in this
 > section come from our local runner, which presents options in each task's
 > authored order. JevBench measures every entrant through the TypeSafe wire format,
-> where options arrive alphabetically. Through the wire Gemma 4 E4B scores
-> **185/231 (0.801)** with the server's default natural option order (184/231 with
-> options as received), not 188/231 (0.814): just ahead of metask-jev-4b and
-> *behind* local-jev, SemIf, Jobe and Hopper in the ~4B class. See [Serving](#serving-the-typesafe-wire-format-on-mlx-or-pytorch).
+> where options arrive alphabetically. Through the wire Gemma 4 E4B with the
+> server's defaults (echo on every question, natural option order) scores
+> **182/231 (0.788)**, not 188/231 (0.814) — in the ~4B cluster just behind reflex 4B
+> and spark-s1 (0.792), metask-jev-4b (0.797), local-jev, SemIf, Jobe and Hopper. See [Serving](#serving-the-typesafe-wire-format-on-mlx-or-pytorch).
 > Official v1.4 ranks also require the maintainers' run on 308 sealed decisions,
 > which no number here includes.
 
@@ -202,21 +202,31 @@ position, option markers, label folding — and differ only in the forward pass:
   (Apache-2.0), pinned to revision `ee0ef6023621cff504d758262d4e04895a5af4a2`.
   MLX is imported lazily, so a CUDA host never needs it.
 
-Both report the same prompt hash on `/health` when configured alike (`74a73257a9b2`
+Both report the same prompt hash on `/health` when configured alike (`135c2ebd8537`
 for the defaults), so an evaluator can confirm which configuration is being served.
 
 Gemma 4 E4B 8-bit, 231 public decisions, one pass per decision:
 
-| how it is driven | option order | original | easy | hard | total |
-|---|---|---|---|---|---|
-| local runner (reference) | authored (`labels`) | 69/72 | 48/48 | 71/111 | 188/231 (0.814) |
-| **wire, stock `typesafe` adapter** | as received | 69/72 | 48/48 | 67/111 | 184/231 (0.797) |
-| **wire, stock `typesafe` adapter** | **natural (default)** | 69/72 | 48/48 | 68/111 | **185/231 (0.801)** |
+| how it is driven | echo | option order | original | easy | hard | total |
+|---|---|---|---|---|---|---|
+| local runner (reference) | > 2 options | authored (`labels`) | 69/72 | 48/48 | 71/111 | 188/231 (0.814) |
+| wire, stock `typesafe` adapter | > 2 options | as received | 69/72 | 48/48 | 67/111 | 184/231 (0.797) |
+| wire, stock `typesafe` adapter | > 2 options | natural | 69/72 | 48/48 | 68/111 | 185/231 (0.801) |
+| **wire, stock `typesafe` adapter** | **always (default)** | **natural (default)** | 69/72 | 48/48 | 65/111 | **182/231 (0.788)** |
 
 Only the wire rows are comparable with the JevBench board.
 
-**Through the wire the public score is 185/231 (0.801), not the 188/231 our local
-runner reports.** The request carries options as a `criteria` object whose keys
+**Through the wire the public score is 182/231 (0.788) with the defaults, not the
+188/231 our local runner reports.** Two things account for the gap.
+
+*The echo is on for every question.* It was once gated to questions with more than
+two options, a rule whose only support was these public items. A pre-registered test
+on synthetic data (`bench/synthetic/PREREGISTRATION.md`) found the echo helps yes/no
+questions too and does not work the way the gate assumed, so the default is now the
+simpler rule — accepted knowingly at a cost of three public items (185 → 182, all
+three yes/no decisions it broke, none it fixed).
+
+*Option order.* The request carries options as a `criteria` object whose keys
 arrive alphabetically, not in the task's authored order. With options taken as
 received, 226 of 231 decisions are unchanged and the score is 184/231; all five
 that differ are `choice` items, and four of those were borderline (confidence
@@ -233,9 +243,9 @@ right (184 → 185, the other 230 decisions bit-identical). It cannot recover or
 carried by meaning rather than digits (`before_open / within_window / late…`,
 `overturned / modified / upheld`), which account for the other three wire losses.
 
-Every board entrant is measured through the same wire, so **0.801 is the comparable
-number**: just ahead of metask-jev-4b (0.797) and behind local-jev, SemIf, Jobe and
-Hopper in the ~4B class.
+Every board entrant is measured through the same wire, so **0.788 is the comparable
+number**: in the ~4B cluster, just behind reflex 4B and spark-s1 (0.792), metask-jev-4b
+(0.797), local-jev (0.805), SemIf and Jobe (0.810) and Hopper (0.823).
 
 **PyTorch reproduces MLX.** On the 111 hard items in bf16, torch on Apple MPS and MLX
 agree on 111/111 decisions (both 70/111); probabilities differ by a median of 0.0003

@@ -114,7 +114,8 @@ class MlxJevLocalAdapter:
         markers: Sequence[str] | None = None,  # option markers; default A, B, C, ...
         backend: str = "mlx",            # "mlx" (reference) or "torch" (CUDA / MPS / CPU)
         device: str | None = None,       # torch only; default: cuda > mps > cpu
-        echo_min_options: int = 2,       # echo only when there are MORE options than this
+        echo_min_options: int = 0,       # echo only when there are MORE options than this
+                                         # (0 = always; see bench/synthetic/PREREGISTRATION.md)
         quant: str | None = None,        # torch only: "int8" | "nf4" (bitsandbytes, CUDA)
         low_vram: bool = False,          # torch only: keep embeddings / unused towers on CPU
     ):
@@ -295,17 +296,16 @@ class MlxJevLocalAdapter:
             f"Options:\n" + "\n".join(lines) + "\n\n"
             + self.instruction
         )
-        # Repeating the question body makes the second copy effectively
-        # bidirectional over it: under causal attention the first copy builds
-        # each option's representation without having seen the later options,
-        # while every token of the second copy attends to all of them. A typed
-        # decision is comparative, so the options should be able to see each
-        # other. The state is never repeated -- it is the expensive part.
-        # Only when there is something to compare. With two options the second
-        # copy reveals nothing the first did not already contain -- it is pure
-        # duplication between the state and the read position, and measurably
-        # hurts some models on binary items while helping every model on
-        # multi-option ones.
+        # The echo: emit the question body twice, after the state (S/Q/Q). The
+        # state is never repeated -- it is the expensive part. It helps, but the
+        # original rationale ("the second copy makes the options mutually visible")
+        # failed its direct test: on pre-registered synthetic data the echo left
+        # option-order sensitivity exactly unchanged (bench/synthetic/
+        # PREREGISTRATION.md). What fits is a second read of the question AFTER the
+        # state, which would help every question type -- and it did, yes/no
+        # included. So it is applied to every question by default
+        # (repeat_min_options = 0); the old "> 2 options" gate had support only on
+        # the public benchmark items and is kept as an option, not the default.
         if self.repeat > 1 and len(task.labels) > self.repeat_min_options:
             body = ("\n\n".join([body] * self.repeat))
         state = _state_text(task.state)
