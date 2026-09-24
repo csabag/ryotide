@@ -63,10 +63,13 @@ class TorchClassifier:
             if not self.device.startswith("cuda"):
                 raise ValueError(f"--quant {quant} needs CUDA (bitsandbytes); device is {self.device}")
             from transformers import BitsAndBytesConfig
+            # With low_vram some modules sit on the CPU; bitsandbytes refuses that
+            # unless told to keep those (unquantized) modules in system RAM.
+            offload = {"llm_int8_enable_fp32_cpu_offload": True} if low_vram else {}
             kwargs["quantization_config"] = (
-                BitsAndBytesConfig(load_in_8bit=True) if quant == "int8" else
+                BitsAndBytesConfig(load_in_8bit=True, **offload) if quant == "int8" else
                 BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
-                                   bnb_4bit_compute_dtype=self.dtype))
+                                   bnb_4bit_compute_dtype=self.dtype, **offload))
         if quant or low_vram:
             kwargs["device_map"] = self._device_map(AutoConfig, AutoModelForCausalLM, model_id, revision)
             self.model = AutoModelForCausalLM.from_pretrained(model_id, **kwargs).eval()
