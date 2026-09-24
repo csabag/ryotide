@@ -114,6 +114,7 @@ class MlxJevLocalAdapter:
         markers: Sequence[str] | None = None,  # option markers; default A, B, C, ...
         backend: str = "mlx",            # "mlx" (reference) or "torch" (CUDA / MPS / CPU)
         device: str | None = None,       # torch only; default: cuda > mps > cpu
+        echo_min_options: int = 2,       # echo only when there are MORE options than this
     ):
         # `endpoint` carries the model id/path, matching the other local adapters.
         self.path = endpoint or model or "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
@@ -130,7 +131,7 @@ class MlxJevLocalAdapter:
         self.idk = idk
         self.idk_first = idk_first
         self.repeat = max(1, int(repeat))
-        self.repeat_min_options = 2      # repeat only if MORE than this many options
+        self.repeat_min_options = echo_min_options   # repeat only if MORE than this many options
         self.instruction = instruction or DEFAULT_INSTRUCTION
         self.question_first = question_first
         self.markers = list(markers) if markers else list(LETTERS)

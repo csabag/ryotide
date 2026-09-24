@@ -23,6 +23,8 @@ ap.add_argument("--idk", action="store_true", help="offer an unscored 'cannot de
 ap.add_argument("--idk-first", action="store_true", help="place the escape hatch at slot A")
 ap.add_argument("--repeat", type=int, default=1, help="emit the question body N times (echo trick)")
 ap.add_argument("--prefix", default=None, help="pin the answer prefix (skips calibration)")
+ap.add_argument("--echo-min-options", type=int, default=2,
+                help="echo the question only when there are MORE options than this (0/1 = always)")
 ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
 ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
 ap.add_argument("--revision", default=None, help="pin the model revision (torch)")
@@ -48,7 +50,8 @@ ad = MlxJevLocalAdapter(endpoint=a.model, orders=a.orders, chat=not a.no_chat,
                         idk_first=a.idk_first, repeat=a.repeat,
                         pin_prefix=a.prefix, pin_marker=a.marker,
                         instruction=a.instruction, question_first=a.qfirst,
-                        backend=a.backend, device=a.device, revision=a.revision)
+                        backend=a.backend, device=a.device, revision=a.revision,
+                        echo_min_options=a.echo_min_options)
 t0 = time.perf_counter(); ad.load()
 print(f"[warm load {time.perf_counter()-t0:.1f}s] model={a.model} orders={a.orders} "
       f"chat={not a.no_chat} franken={fr} dtype={a.dtype} tasks={len(tasks)}", flush=True)
