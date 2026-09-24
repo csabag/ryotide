@@ -48,6 +48,16 @@ from .jevbench_adapter import DEFAULT_INSTRUCTION, MlxJevLocalAdapter
 
 NOUL_LABELS = ["no", "yes"]
 
+# One pinned configuration per benchmark entry. The temperature is fit on the
+# synthetic typed-decision set (never on JevBench items) with
+# bench/fit_temperature.py; see docs/SUBMISSION.md.
+PRESETS = {
+    "ryotide-gemma": dict(backend="torch", model="google/gemma-4-E4B-it",
+                          revision="ee0ef6023621cff504d758262d4e04895a5af4a2", temperature=1.0),
+    "ryotide-qwen": dict(backend="torch", model="Qwen/Qwen3.5-4B",
+                         revision="851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a", temperature=1.0),
+}
+
 
 def natural_key(label: str) -> list:
     """'12_credits' -> [(0, 12), (1, '_credits')]: digits compare as numbers."""
@@ -105,7 +115,9 @@ class Engine:
         self.adapter = MlxJevLocalAdapter(
             endpoint=a.model, orders=a.orders, repeat=a.repeat,
             pin_prefix=a.prefix, pin_marker=a.marker, backend=a.backend,
-            device=a.device, revision=a.revision, quant=a.quant, low_vram=a.low_vram)
+            device=a.device, revision=a.revision, quant=a.quant, low_vram=a.low_vram,
+            temperature=a.temperature)
+        self.preset = a.preset
         self.backend = a.backend
         self.revision = a.revision
         self.model = a.model
@@ -114,7 +126,7 @@ class Engine:
         self.config = {"orders": a.orders, "repeat": a.repeat, "answer_prefix": a.prefix,
                        "marker_pattern": a.marker, "instruction": DEFAULT_INSTRUCTION,
                        "layout": "state / question / question (echo always)",
-                       "temperature": 1.0, "option_order": a.option_order}
+                       "temperature": a.temperature, "option_order": a.option_order}
         self.prompt_hash = hashlib.sha256(json.dumps(self.config, sort_keys=True)
                                           .encode()).hexdigest()[:12]
 
@@ -132,7 +144,7 @@ class Engine:
 
     def health(self) -> dict:
         dev = getattr(self.adapter._clf, "device", None)
-        return {"status": "ok", "model": self.model, "revision": self.revision,
+        return {"status": "ok", "entry": self.preset, "model": self.model, "revision": self.revision,
                 "engine": self.backend if self.backend == "mlx" else f"torch-{dev}",
                 "prompt_hash": self.prompt_hash, "config": self.config,
                 "weights": {"quant": self.adapter.quant or "none",
@@ -175,8 +187,12 @@ def make_handler(engine: Engine):
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="RYOTIDE TypeSafe-compatible server")
-    ap.add_argument("--model", default="mlx-community/gemma-4-e4b-it-8bit")
-    ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
+    ap.add_argument("--preset", choices=sorted(PRESETS), default=None,
+                    help="a pinned benchmark entry; explicit flags below override it")
+    ap.add_argument("--model", default=None)
+    ap.add_argument("--backend", choices=("mlx", "torch"), default=None)
+    ap.add_argument("--temperature", type=float, default=None,
+                    help="softmax temperature over the option markers")
     ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
     ap.add_argument("--revision", default=None, help="pin the model revision")
     ap.add_argument("--quant", choices=("int8", "nf4"), default=None,
@@ -192,6 +208,11 @@ def main() -> None:
     ap.add_argument("--option-order", choices=("natural", "received"), default="natural",
                     help="choice options: canonical natural sort (default) or as received")
     a = ap.parse_args()
+    base = PRESETS.get(a.preset, {}) if a.preset else {
+        "backend": "mlx", "model": "mlx-community/gemma-4-e4b-it-8bit", "revision": None, "temperature": 1.0}
+    for k, v in base.items():
+        if getattr(a, k, None) is None:
+            setattr(a, k, v)
 
     engine = Engine(a)
     t0 = time.perf_counter()

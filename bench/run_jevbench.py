@@ -26,6 +26,8 @@ ap.add_argument("--prefix", default=None, help="pin the answer prefix (skips cal
 ap.add_argument("--echo-min-options", type=int, default=0,
                 help="echo only when there are MORE options than this (default 0 = always; "
                      "2 reproduces the earlier gated runs)")
+ap.add_argument("--temperature", type=float, default=1.0,
+                help="softmax temperature over the option markers (fit with bench/fit_temperature.py)")
 ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
 ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
 ap.add_argument("--revision", default=None, help="pin the model revision (torch)")
@@ -57,7 +59,7 @@ ad = MlxJevLocalAdapter(endpoint=a.model, orders=a.orders, chat=not a.no_chat,
                         instruction=a.instruction, question_first=a.qfirst,
                         backend=a.backend, device=a.device, revision=a.revision,
                         echo_min_options=a.echo_min_options,
-                        quant=a.quant, low_vram=a.low_vram)
+                        quant=a.quant, low_vram=a.low_vram, temperature=a.temperature)
 t0 = time.perf_counter(); ad.load()
 print(f"[warm load {time.perf_counter()-t0:.1f}s] model={a.model} orders={a.orders} "
       f"chat={not a.no_chat} franken={fr} dtype={a.dtype} tasks={len(tasks)}", flush=True)

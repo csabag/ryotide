@@ -1,0 +1,13 @@
+# Secrets must never enter the build context
+.env
+.env.*
+# Local environments, history and bulky outputs
+.venv
+.git
+results
+data
+bench
+docs
+**/__pycache__
+*.log
+.DS_Store

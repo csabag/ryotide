@@ -29,6 +29,7 @@ expensive part; the option block is a few dozen tokens.
 from __future__ import annotations
 
 import json
+import math
 import time
 from typing import TYPE_CHECKING, Any, Sequence
 
@@ -118,6 +119,7 @@ class MlxJevLocalAdapter:
                                          # (0 = always; see bench/synthetic/PREREGISTRATION.md)
         quant: str | None = None,        # torch only: "int8" | "nf4" (bitsandbytes, CUDA)
         low_vram: bool = False,          # torch only: keep embeddings / unused towers on CPU
+        temperature: float = 1.0,        # softmax temperature over the option markers
     ):
         # `endpoint` carries the model id/path, matching the other local adapters.
         self.path = endpoint or model or "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
@@ -146,6 +148,9 @@ class MlxJevLocalAdapter:
             raise ValueError("quant / low_vram apply to the torch backend only")
         self.quant = quant
         self.low_vram = low_vram
+        if not temperature > 0:
+            raise ValueError("temperature must be > 0")
+        self.temperature = float(temperature)
         self._clf: Classifier | None = None
         self._letter_ids: dict[int, list[int]] = {}
         self._suffix: str | None = None      # chosen by _calibrate_read_position
@@ -400,6 +405,13 @@ class MlxJevLocalAdapter:
                 branch = fork_cache(base) if shared else None
                 p, mass = self._read(toks[shared:], read, cache=branch)
                 marker_mass.append(mass)
+                if self.temperature != 1.0:
+                    # softmax(z / T) over the markers, from softmax(z): the order of
+                    # the options never changes, only how peaked the distribution is
+                    z = [math.log(max(x, 1e-300)) / self.temperature for x in p]
+                    top = max(z)
+                    e = [math.exp(v - top) for v in z]
+                    p = [v / sum(e) for v in e]
                 if use_idk:
                     if self.idk_first:
                         idk_probs.append(float(p[0]))
@@ -444,6 +456,7 @@ class MlxJevLocalAdapter:
                 "question_repeats": (self.repeat if len(task.labels) > self.repeat_min_options else 1),
                 "question_first": self.question_first,
                 "quant": self.quant,
+                "temperature": self.temperature,
                 "low_vram_offloaded": getattr(clf, "offloaded", None),
                 "instruction": self.instruction,
                 # Share of the FULL vocab distribution sitting on the markers.
