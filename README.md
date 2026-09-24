@@ -31,8 +31,9 @@ three tiers.
 > section come from our local runner, which presents options in each task's
 > authored order. JevBench measures every entrant through the TypeSafe wire format,
 > where options arrive alphabetically. Through the wire Gemma 4 E4B scores
-> **184/231 (0.797)**, not 188/231 (0.814): level with metask-jev-4b and *behind*
-> SemIf, Jobe, local-jev and Hopper in the ~4B class. See [Serving](#serving-the-typesafe-wire-format-on-mlx-or-pytorch).
+> **185/231 (0.801)** with the server's default natural option order (184/231 with
+> options as received), not 188/231 (0.814): just ahead of metask-jev-4b and
+> *behind* local-jev, SemIf, Jobe and Hopper in the ~4B class. See [Serving](#serving-the-typesafe-wire-format-on-mlx-or-pytorch).
 > Official v1.4 ranks also require the maintainers' run on 308 sealed decisions,
 > which no number here includes.
 
@@ -203,14 +204,27 @@ position, option markers, label folding — and differ only in the forward pass:
 
 Both report the same prompt hash on `/health` (`71df2d7d04b6`) when configured alike.
 
-**Through the wire the public score is 184/231 (0.797), not the 188/231 our local
+**Through the wire the public score is 185/231 (0.801), not the 188/231 our local
 runner reports.** The request carries options as a `criteria` object whose keys
-arrive alphabetically, not in the task's authored order. 226 of 231 decisions are
-unchanged; all five that differ are `choice` items, and four of those were
-borderline (confidence 0.40–0.75) numeric or ordinal scales that alphabetical order
-scrambles — `12, 15, 6, 9 credits` instead of `6, 9, 12, 15`. Every board entrant is
-measured through the same wire, so **0.797 is the comparable number**: level with
-metask-jev-4b and behind Hopper, SemIf, Jobe and local-jev in the ~4B class.
+arrive alphabetically, not in the task's authored order. With options taken as
+received, 226 of 231 decisions are unchanged and the score is 184/231; all five
+that differ are `choice` items, and four of those were borderline (confidence
+0.40–0.75) numeric or ordinal scales that alphabetical order scrambles —
+`12, 15, 6, 9 credits` instead of `6, 9, 12, 15`.
+
+**Option order.** A JSON object's key order is not meaningful, so the server puts
+choice options in a canonical *natural* order by default: digit runs compare as
+numbers, everything else alphabetically (`--option-order received` turns it off,
+and the setting is part of the `/health` prompt hash). The rule was fixed before it
+was measured and has no tunable part, but read its effect plainly: on the public set
+it changes exactly one item — the credits item that motivated it — which it gets
+right (184 → 185, the other 230 decisions bit-identical). It cannot recover orders
+carried by meaning rather than digits (`before_open / within_window / late…`,
+`overturned / modified / upheld`), which account for the other three wire losses.
+
+Every board entrant is measured through the same wire, so **0.801 is the comparable
+number**: just ahead of metask-jev-4b (0.797) and behind local-jev, SemIf, Jobe and
+Hopper in the ~4B class.
 
 **PyTorch reproduces MLX.** On the 111 hard items in bf16, torch on Apple MPS and MLX
 agree on 111/111 decisions (both 70/111); probabilities differ by a median of 0.0003

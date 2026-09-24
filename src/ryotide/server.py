@@ -10,9 +10,13 @@ benchmark can drive RYOTIDE without any RYOTIDE-specific code:
   GET  /health         model, engine, decision config and a prompt hash
 
 Labels are rebuilt from the question alone, because the wire never carries them:
-noul -> ["no", "yes"]; choice -> the criteria keys in the order received;
-score -> "0".."n-1" over the criteria list. Option order therefore follows the
-request, which is what an evaluator sees -- not the order in a local dataset file.
+noul -> ["no", "yes"]; score -> "0".."n-1" over the criteria list (a list, so its
+order is the author's); choice -> the criteria keys. A JSON object's key order is
+not meaningful, so by default choice options are put in a canonical NATURAL order:
+runs of digits compare as numbers ("6_credits" < "9_credits" < "12_credits"), all
+else alphabetically. Numeric scales then read as scales, and the decision no longer
+depends on how a client happened to order its keys. `--option-order received`
+keeps the request's order instead.
 
     PYTHONPATH=src python -m ryotide.server --model mlx-community/gemma-4-e4b-it-8bit
     PYTHONPATH=src python -m ryotide.server --backend torch --model google/gemma-4-E4B-it \
@@ -27,6 +31,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
 import threading
 import time
@@ -44,11 +49,17 @@ from .jevbench_adapter import DEFAULT_INSTRUCTION, MlxJevLocalAdapter
 NOUL_LABELS = ["no", "yes"]
 
 
+def natural_key(label: str) -> list:
+    """'12_credits' -> [(0, 12), (1, '_credits')]: digits compare as numbers."""
+    return [(0, int(t)) if t.isdigit() else (1, t.lower())
+            for t in re.split(r"(\d+)", label) if t]
+
+
 class BadRequest(ValueError):
     pass
 
 
-def task_from_request(body: dict) -> SimpleNamespace:
+def task_from_request(body: dict, option_order: str = "natural") -> SimpleNamespace:
     """Rebuild the adapter's task view from one /v1/systemone request."""
     if not isinstance(body, dict) or "state" not in body:
         raise BadRequest("body must be an object with 'state' and 'questions'")
@@ -65,6 +76,8 @@ def task_from_request(body: dict) -> SimpleNamespace:
         if not isinstance(crit, dict) or len(crit) < 2:
             raise BadRequest("choice needs a 'criteria' object with at least two options")
         labels = [str(k) for k in crit]
+        if option_order == "natural":
+            labels.sort(key=natural_key)
     elif qtype == "score":
         if not isinstance(crit, list) or len(crit) < 2:
             raise BadRequest("score needs a 'criteria' list with at least two levels")
@@ -96,16 +109,17 @@ class Engine:
         self.backend = a.backend
         self.revision = a.revision
         self.model = a.model
+        self.option_order = a.option_order
         self.lock = threading.Lock()
         self.config = {"orders": a.orders, "repeat": a.repeat, "answer_prefix": a.prefix,
                        "marker_pattern": a.marker, "instruction": DEFAULT_INSTRUCTION,
                        "layout": "state / question / question (echo only when > 2 options)",
-                       "temperature": 1.0}
+                       "temperature": 1.0, "option_order": a.option_order}
         self.prompt_hash = hashlib.sha256(json.dumps(self.config, sort_keys=True)
                                           .encode()).hexdigest()[:12]
 
     def decide(self, body: dict) -> dict:
-        task = task_from_request(body)
+        task = task_from_request(body, self.option_order)
         with self.lock:                      # MLX is not thread-safe
             res = self.adapter.run(task)
         if not res.ok:
@@ -169,6 +183,8 @@ def main() -> None:
     ap.add_argument("--repeat", type=int, default=2)
     ap.add_argument("--prefix", default="Answer: **")
     ap.add_argument("--marker", default="{}")
+    ap.add_argument("--option-order", choices=("natural", "received"), default="natural",
+                    help="choice options: canonical natural sort (default) or as received")
     a = ap.parse_args()
 
     engine = Engine(a)
