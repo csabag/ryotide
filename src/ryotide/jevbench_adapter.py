@@ -115,6 +115,8 @@ class MlxJevLocalAdapter:
         backend: str = "mlx",            # "mlx" (reference) or "torch" (CUDA / MPS / CPU)
         device: str | None = None,       # torch only; default: cuda > mps > cpu
         echo_min_options: int = 2,       # echo only when there are MORE options than this
+        quant: str | None = None,        # torch only: "int8" | "nf4" (bitsandbytes, CUDA)
+        low_vram: bool = False,          # torch only: keep embeddings / unused towers on CPU
     ):
         # `endpoint` carries the model id/path, matching the other local adapters.
         self.path = endpoint or model or "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
@@ -139,6 +141,10 @@ class MlxJevLocalAdapter:
             raise ValueError(f"unknown backend {backend!r}")
         self.backend = backend
         self.device = device
+        if (quant or low_vram) and backend != "torch":
+            raise ValueError("quant / low_vram apply to the torch backend only")
+        self.quant = quant
+        self.low_vram = low_vram
         self._clf: Classifier | None = None
         self._letter_ids: dict[int, list[int]] = {}
         self._suffix: str | None = None      # chosen by _calibrate_read_position
@@ -158,7 +164,8 @@ class MlxJevLocalAdapter:
         if self._clf is None and self.backend == "torch":
             from .torch_backend import TorchClassifier
             self._clf = TorchClassifier(self.path, revision=self.revision,
-                                        device=self.device, dtype=self.dtype or "bfloat16")
+                                        device=self.device, dtype=self.dtype or "bfloat16",
+                                        quant=self.quant, low_vram=self.low_vram)
         if self._clf is None:
             import mlx.core as mx
             from .classify import Classifier
@@ -436,6 +443,8 @@ class MlxJevLocalAdapter:
                 "idk_position": ("first" if self.idk_first else "last") if use_idk else None,
                 "question_repeats": (self.repeat if len(task.labels) > self.repeat_min_options else 1),
                 "question_first": self.question_first,
+                "quant": self.quant,
+                "low_vram_offloaded": getattr(clf, "offloaded", None),
                 "instruction": self.instruction,
                 # Share of the FULL vocab distribution sitting on the markers.
                 # Near 1.0 means the prompt lands the read at a real answer

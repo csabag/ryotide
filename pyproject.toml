@@ -9,13 +9,23 @@ requires-python = ">=3.12"
 dependencies = [
     "datasets>=3.0",
     "jsonschema>=4.26.0",
-    "mlx>=0.29",
-    "mlx-lm>=0.28",
+    # MLX exists only on Apple Silicon; everywhere else the torch backend is used
+    "mlx>=0.29; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "mlx-lm>=0.28; sys_platform == 'darwin' and platform_machine == 'arm64'",
     "numpy>=2.5.3",
     "scikit-learn>=1.9.1",
 ]
 
 [project.optional-dependencies]
 torch = [
+    "accelerate>=1.0",
     "torch>=2.8",
+    "transformers>=5.17",
+]
+cuda = [
+    "accelerate>=1.0",
+    "bitsandbytes>=0.46 ; sys_platform == 'linux' or sys_platform == 'win32'",
+    "flash-linear-attention>=0.3 ; sys_platform == 'linux'",
+    "torch>=2.8",
+    "transformers>=5.17",
 ]

@@ -28,6 +28,10 @@ ap.add_argument("--echo-min-options", type=int, default=2,
 ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
 ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
 ap.add_argument("--revision", default=None, help="pin the model revision (torch)")
+ap.add_argument("--quant", choices=("int8", "nf4"), default=None,
+                help="torch on CUDA: bitsandbytes weight quantization")
+ap.add_argument("--low-vram", action="store_true",
+                help="torch: keep embedding tables and unused towers on CPU")
 ap.add_argument("--qfirst", action="store_true", help="also emit the question before the state")
 ap.add_argument("--instruction", default=None, help="override the closing instruction line")
 ap.add_argument("--marker", default=None, help="pin the marker surface form, e.g. '{}' or ' {}'")
@@ -51,7 +55,8 @@ ad = MlxJevLocalAdapter(endpoint=a.model, orders=a.orders, chat=not a.no_chat,
                         pin_prefix=a.prefix, pin_marker=a.marker,
                         instruction=a.instruction, question_first=a.qfirst,
                         backend=a.backend, device=a.device, revision=a.revision,
-                        echo_min_options=a.echo_min_options)
+                        echo_min_options=a.echo_min_options,
+                        quant=a.quant, low_vram=a.low_vram)
 t0 = time.perf_counter(); ad.load()
 print(f"[warm load {time.perf_counter()-t0:.1f}s] model={a.model} orders={a.orders} "
       f"chat={not a.no_chat} franken={fr} dtype={a.dtype} tasks={len(tasks)}", flush=True)

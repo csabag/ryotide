@@ -105,7 +105,7 @@ class Engine:
         self.adapter = MlxJevLocalAdapter(
             endpoint=a.model, orders=a.orders, repeat=a.repeat,
             pin_prefix=a.prefix, pin_marker=a.marker, backend=a.backend,
-            device=a.device, revision=a.revision)
+            device=a.device, revision=a.revision, quant=a.quant, low_vram=a.low_vram)
         self.backend = a.backend
         self.revision = a.revision
         self.model = a.model
@@ -134,7 +134,9 @@ class Engine:
         dev = getattr(self.adapter._clf, "device", None)
         return {"status": "ok", "model": self.model, "revision": self.revision,
                 "engine": self.backend if self.backend == "mlx" else f"torch-{dev}",
-                "prompt_hash": self.prompt_hash, "config": self.config}
+                "prompt_hash": self.prompt_hash, "config": self.config,
+                "weights": {"quant": self.adapter.quant or "none",
+                            "offloaded_to_cpu": getattr(self.adapter._clf, "offloaded", [])}}
 
 
 def make_handler(engine: Engine):
@@ -177,6 +179,10 @@ def main() -> None:
     ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
     ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
     ap.add_argument("--revision", default=None, help="pin the model revision")
+    ap.add_argument("--quant", choices=("int8", "nf4"), default=None,
+                    help="torch on CUDA: bitsandbytes weight quantization")
+    ap.add_argument("--low-vram", action="store_true",
+                    help="torch: keep embedding tables and unused towers on CPU")
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8778)
     ap.add_argument("--orders", type=int, default=1)
