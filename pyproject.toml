@@ -8,6 +8,7 @@ license-files = ["LICENSE"]
 requires-python = ">=3.12"
 dependencies = [
     "datasets>=3.0",
+    "jevbench",
     "jsonschema>=4.26.0",
     # MLX exists only on Apple Silicon; everywhere else the torch backend is used
     "mlx>=0.29; sys_platform == 'darwin' and platform_machine == 'arm64'",
@@ -29,3 +30,11 @@ cuda = [
     "torch>=2.8",
     "transformers>=5.17",
 ]
+
+[tool.uv.workspace]
+members = [
+    "vendor/jevbench",
+]
+
+[tool.uv.sources]
+jevbench = { workspace = true, editable = true }
