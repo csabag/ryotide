@@ -23,6 +23,9 @@ ap.add_argument("--idk", action="store_true", help="offer an unscored 'cannot de
 ap.add_argument("--idk-first", action="store_true", help="place the escape hatch at slot A")
 ap.add_argument("--repeat", type=int, default=1, help="emit the question body N times (echo trick)")
 ap.add_argument("--prefix", default=None, help="pin the answer prefix (skips calibration)")
+ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
+ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
+ap.add_argument("--revision", default=None, help="pin the model revision (torch)")
 ap.add_argument("--qfirst", action="store_true", help="also emit the question before the state")
 ap.add_argument("--instruction", default=None, help="override the closing instruction line")
 ap.add_argument("--marker", default=None, help="pin the marker surface form, e.g. '{}' or ' {}'")
@@ -44,7 +47,8 @@ ad = MlxJevLocalAdapter(endpoint=a.model, orders=a.orders, chat=not a.no_chat,
                         franken=fr, dtype=a.dtype, idk=a.idk,
                         idk_first=a.idk_first, repeat=a.repeat,
                         pin_prefix=a.prefix, pin_marker=a.marker,
-                        instruction=a.instruction, question_first=a.qfirst)
+                        instruction=a.instruction, question_first=a.qfirst,
+                        backend=a.backend, device=a.device, revision=a.revision)
 t0 = time.perf_counter(); ad.load()
 print(f"[warm load {time.perf_counter()-t0:.1f}s] model={a.model} orders={a.orders} "
       f"chat={not a.no_chat} franken={fr} dtype={a.dtype} tasks={len(tasks)}", flush=True)

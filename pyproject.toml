@@ -14,3 +14,8 @@ dependencies = [
     "numpy>=2.5.3",
     "scikit-learn>=1.9.1",
 ]
+
+[project.optional-dependencies]
+torch = [
+    "torch>=2.8",
+]

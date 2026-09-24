@@ -22,10 +22,19 @@ published board.
 
 ## Results
 
-Best capability **75.0 intelligence** (Gemma 4 E4B + conditional repetition),
-rank 19 of 59 on matched tiers -- above SemIf and reflex 4B. Best composite
-**74.8** (Qwen3.5-4B 8-bit). Measured head to head, Jev reaches 82.2 intelligence
-and 87.0 composite on the same three tiers.
+Best capability **75.0 intelligence** (Gemma 4 E4B + conditional repetition) and
+best composite **74.8** (Qwen3.5-4B 8-bit), both measured with our local runner.
+Measured head to head, Jev reaches 82.2 intelligence and 87.0 composite on the same
+three tiers.
+
+> **Correction — read this before comparing with the board.** The numbers in this
+> section come from our local runner, which presents options in each task's
+> authored order. JevBench measures every entrant through the TypeSafe wire format,
+> where options arrive alphabetically. Through the wire Gemma 4 E4B scores
+> **184/231 (0.797)**, not 188/231 (0.814): level with metask-jev-4b and *behind*
+> SemIf, Jobe, local-jev and Hopper in the ~4B class. See [Serving](#serving-the-typesafe-wire-format-on-mlx-or-pytorch).
+> Official v1.4 ranks also require the maintainers' run on 308 sealed decisions,
+> which no number here includes.
 
 | system | intel | easy | std | hard | calib | score |
 |---|---|---|---|---|---|---|
@@ -169,17 +178,67 @@ src/ryotide/branch.py            fork/trim/lazy KV strategies, memory arithmetic
 src/ryotide/generate.py          decode-from-cache, result injection
 src/ryotide/selective.py         risk-coverage, AURC, coverage-at-accuracy
 src/ryotide/franken.py           head-duplication surgery + identity control
-src/ryotide/jevbench_adapter.py  JevBench adapter (option markers, order debiasing)
+src/ryotide/jevbench_adapter.py  decision adapter: prompt, read position, markers, echo; MLX or torch
+src/ryotide/server.py            TypeSafe-compatible HTTP server (POST /v1/systemone, GET /health)
+src/ryotide/torch_backend.py     PyTorch backend (CUDA / MPS / CPU) for hosts without MLX
 src/ryotide/glue.py              superseded GLUE harness, kept for reference
-bench/                           runners, scorers, board comparison, probes
+bench/                           runners, scorers, board comparison
+bench/probes/                    layout, marker, calibration, notes, reasoning, trajectory probes
 vendor/jevbench/                 vendored benchmark subset, tag v1.4.1 (24b9b5c)
-results/jevbench/                raw per-decision results for all 19 runs
+results/jevbench/                per-decision results (results.jsonl + summary.json) for every run
+results/probes/                  per-item outputs and logs of the probes, negative results included
 ```
+
+## Serving: the TypeSafe wire format, on MLX or PyTorch
+
+`src/ryotide/server.py` answers TypeSafe's `POST /v1/systemone` (and `GET /health`),
+so JevBench's **stock `typesafe` adapter** drives it with no RYOTIDE-specific code.
+Two backends share every decision-shaping step — prompt, chat template, read
+position, option markers, label folding — and differ only in the forward pass:
+
+- **MLX** (reference, Apple Silicon): `mlx-community/gemma-4-e4b-it-8bit`.
+- **PyTorch** (CUDA, MPS or CPU): the original `google/gemma-4-E4B-it` bf16 weights
+  (Apache-2.0), pinned to revision `ee0ef6023621cff504d758262d4e04895a5af4a2`.
+  MLX is imported lazily, so a CUDA host never needs it.
+
+Both report the same prompt hash on `/health` (`71df2d7d04b6`) when configured alike.
+
+**Through the wire the public score is 184/231 (0.797), not the 188/231 our local
+runner reports.** The request carries options as a `criteria` object whose keys
+arrive alphabetically, not in the task's authored order. 226 of 231 decisions are
+unchanged; all five that differ are `choice` items, and four of those were
+borderline (confidence 0.40–0.75) numeric or ordinal scales that alphabetical order
+scrambles — `12, 15, 6, 9 credits` instead of `6, 9, 12, 15`. Every board entrant is
+measured through the same wire, so **0.797 is the comparable number**: level with
+metask-jev-4b and behind Hopper, SemIf, Jobe and local-jev in the ~4B class.
+
+**PyTorch reproduces MLX.** On the 111 hard items in bf16, torch on Apple MPS and MLX
+agree on 111/111 decisions (both 70/111); probabilities differ by a median of 0.0003
+(max 0.16), the expected bf16 arithmetic-order noise. The refactor that made the
+adapter backend-aware is bit-exact on the MLX path (pinned and calibrated,
+one and two option orders). **Not yet verified on CUDA** — the code path is the same
+PyTorch as MPS, but no NVIDIA run has been made.
+
+```bash
+# MLX (Apple Silicon)
+PYTHONPATH=src uv run python -m ryotide.server --model mlx-community/gemma-4-e4b-it-8bit
+# PyTorch (CUDA / MPS / CPU)
+PYTHONPATH=src uv run --extra torch python -m ryotide.server --backend torch \
+    --model google/gemma-4-E4B-it --revision ee0ef6023621cff504d758262d4e04895a5af4a2
+# JevBench's stock adapter against either (run from vendor/jevbench)
+PYTHONPATH=. python -m jevbench.cli run --adapter typesafe --endpoint http://127.0.0.1:8778 \
+    --key-env '' --model ryotide --tasks datasets/public/hard.jsonl --results out.jsonl
+```
+
+The server has no authentication; it binds to loopback by default.
 
 ## Running
 
 ```bash
 uv run python bench/run_jevbench.py --model mlx-community/Qwen3.5-4B-MLX-8bit --orders 1 --tag myrun
+uv run --extra torch python bench/run_jevbench.py --backend torch --model google/gemma-4-E4B-it \
+    --revision ee0ef6023621cff504d758262d4e04895a5af4a2 --orders 1 --repeat 2 \
+    --prefix 'Answer: **' --marker '{}' --tag torch-run
 uv run python bench/score_jevbench.py myrun
 uv run python bench/selective_curve.py myrun
 uv run python -m ryotide.cli classify state.txt -q "Q: ...? Answer yes or no.\nA:"

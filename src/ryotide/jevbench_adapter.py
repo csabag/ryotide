@@ -30,13 +30,13 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any, Sequence
+from typing import TYPE_CHECKING, Any, Sequence
 
-import mlx.core as mx
+if TYPE_CHECKING:
+    from .classify import Classifier
 
-from .branch import fork_cache
-from .classify import Classifier
-from .model import load_model
+# Backends are imported lazily: MLX only exists on Apple Silicon, and a CUDA host
+# must be able to import this module (and serve decisions) without it.
 
 LETTERS = "ABCDEFGHIJKLMNOP"
 
@@ -112,6 +112,8 @@ class MlxJevLocalAdapter:
         instruction: str | None = None,  # override the closing instruction line
         question_first: bool = False,    # also emit the question BEFORE the state
         markers: Sequence[str] | None = None,  # option markers; default A, B, C, ...
+        backend: str = "mlx",            # "mlx" (reference) or "torch" (CUDA / MPS / CPU)
+        device: str | None = None,       # torch only; default: cuda > mps > cpu
     ):
         # `endpoint` carries the model id/path, matching the other local adapters.
         self.path = endpoint or model or "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
@@ -132,6 +134,10 @@ class MlxJevLocalAdapter:
         self.instruction = instruction or DEFAULT_INSTRUCTION
         self.question_first = question_first
         self.markers = list(markers) if markers else list(LETTERS)
+        if backend not in ("mlx", "torch"):
+            raise ValueError(f"unknown backend {backend!r}")
+        self.backend = backend
+        self.device = device
         self._clf: Classifier | None = None
         self._letter_ids: dict[int, list[int]] = {}
         self._suffix: str | None = None      # chosen by _calibrate_read_position
@@ -148,7 +154,14 @@ class MlxJevLocalAdapter:
     # -- setup (called before the clock via JEVBENCH_WARM_LOAD=1) -----------
 
     def load(self) -> Classifier:
+        if self._clf is None and self.backend == "torch":
+            from .torch_backend import TorchClassifier
+            self._clf = TorchClassifier(self.path, revision=self.revision,
+                                        device=self.device, dtype=self.dtype or "bfloat16")
         if self._clf is None:
+            import mlx.core as mx
+            from .classify import Classifier
+            from .model import load_model
             model, tok = load_model(self.path)
             if self.dtype:
                 model.set_dtype(getattr(mx, self.dtype))
@@ -198,7 +211,6 @@ class MlxJevLocalAdapter:
         if not pool:
             self._suffix, self._pattern = "Answer:", " {}"
             return self._suffix
-        clf = self._clf
         best = (self.SUFFIXES[0], self.PATTERNS[0], -1.0)
         for pat in self.PATTERNS:
             for suf in self.SUFFIXES:
@@ -206,10 +218,8 @@ class MlxJevLocalAdapter:
                 for t in pool:
                     n = len(t.labels)
                     try:
-                        sel = mx.array(self._letters(n, pat))
                         toks = self._tokens(self._prompt(t, list(range(n))), suffix=suf)
-                        row = clf.logits_at_end(clf.prefill([]), toks)
-                        masses.append(float(mx.sum(mx.softmax(row.astype(mx.float32))[sel]).item()))
+                        masses.append(self._read(toks, self._letters(n, pat))[1])
                     except Exception:
                         masses.append(0.0)
                 m = sum(masses) / len(masses)
@@ -224,6 +234,21 @@ class MlxJevLocalAdapter:
         print(f"[calibrated] prefix={self._suffix!r} marker={self._pattern!r} "
               f"mean marker mass {self._suffix_mass:.4f} over {len(pool)} tasks", flush=True)
         return self._suffix
+
+    def _read(self, toks: Sequence[int], ids: Sequence[int], cache=None) -> tuple[list[float], float]:
+        """Masked next-token distribution at the end of `toks`, plus marker mass.
+
+        The one place the backends differ. MLX may extend a prefilled `cache`
+        (a branch off a shared prefix); torch always runs one full forward pass.
+        """
+        clf = self._clf
+        if self.backend == "torch":
+            return clf.read(toks, ids)
+        import mlx.core as mx
+        row = clf.logits_at_end(cache if cache is not None else clf.prefill([]), toks)
+        sel = mx.array(list(ids))
+        mass = float(mx.sum(mx.softmax(row.astype(mx.float32))[sel]).item())
+        return mx.softmax(row[sel].astype(mx.float32)).tolist(), mass
 
     def _letters(self, n: int, pattern: str | None = None) -> list[int]:
         """Token ids for the first n option markers under one surface form."""
@@ -310,6 +335,8 @@ class MlxJevLocalAdapter:
                                           enable_thinking=False)
         except (TypeError, ValueError):
             ids = tok.apply_chat_template(msg, add_generation_prompt=True)
+        if hasattr(ids, "keys"):          # transformers >= 5 returns a mapping
+            ids = ids["input_ids"]
         return list(ids) + (tok.encode(suf, add_special_tokens=False) if suf else [])
 
     def build_request(self, task) -> dict:
@@ -344,27 +371,27 @@ class MlxJevLocalAdapter:
             prompts = [self._tokens(self._prompt(task, o)) for o in orders]
 
             # Every order shares the state prefix: prefill it once, branch per order.
+            # (MLX only -- the torch backend runs each order as one full pass.)
             shared = 0
-            if len(prompts) > 1:
+            if len(prompts) > 1 and self.backend == "mlx":
                 shortest = min(len(p) for p in prompts)
                 while shared < shortest and len({p[shared] for p in prompts}) == 1:
                     shared += 1
                 shared = max(0, shared - 1)   # keep one token for the branch to extend
 
-            base = clf.prefill(prompts[0][:shared]) if shared else clf.prefill([])
+            base = clf.prefill(prompts[0][:shared]) if shared else None
+            if shared:
+                from .branch import fork_cache
 
             totals = [0.0] * n
             marker_mass: list[float] = []
             idk_probs: list[float] = []
             use_idk = self._idk_active(task)
             read = self._letters(n + 1) if use_idk else letters
-            sel = mx.array(read)
             for order, toks in zip(orders, prompts):
-                branch = fork_cache(base) if shared else clf.prefill([])
-                row = clf.logits_at_end(branch, toks[shared:])
-                full = mx.softmax(row.astype(mx.float32))
-                marker_mass.append(float(mx.sum(full[sel]).item()))
-                p = mx.softmax(row[sel].astype(mx.float32)).tolist()
+                branch = fork_cache(base) if shared else None
+                p, mass = self._read(toks[shared:], read, cache=branch)
+                marker_mass.append(mass)
                 if use_idk:
                     if self.idk_first:
                         idk_probs.append(float(p[0]))
@@ -394,7 +421,7 @@ class MlxJevLocalAdapter:
         res.raw = {
             "response": {"probs": probs},
             "runtime": {
-                "device": "mlx-metal",
+                "device": "mlx-metal" if self.backend == "mlx" else f"torch-{clf.device}",
                 "model": self.model,
                 "orders_averaged": len(orders),
                 "franken": list(self.franken) if self.franken else None,
