@@ -202,7 +202,18 @@ position, option markers, label folding — and differ only in the forward pass:
   (Apache-2.0), pinned to revision `ee0ef6023621cff504d758262d4e04895a5af4a2`.
   MLX is imported lazily, so a CUDA host never needs it.
 
-Both report the same prompt hash on `/health` (`71df2d7d04b6`) when configured alike.
+Both report the same prompt hash on `/health` when configured alike (`74a73257a9b2`
+for the defaults), so an evaluator can confirm which configuration is being served.
+
+Gemma 4 E4B 8-bit, 231 public decisions, one pass per decision:
+
+| how it is driven | option order | original | easy | hard | total |
+|---|---|---|---|---|---|
+| local runner (reference) | authored (`labels`) | 69/72 | 48/48 | 71/111 | 188/231 (0.814) |
+| **wire, stock `typesafe` adapter** | as received | 69/72 | 48/48 | 67/111 | 184/231 (0.797) |
+| **wire, stock `typesafe` adapter** | **natural (default)** | 69/72 | 48/48 | 68/111 | **185/231 (0.801)** |
+
+Only the wire rows are comparable with the JevBench board.
 
 **Through the wire the public score is 185/231 (0.801), not the 188/231 our local
 runner reports.** The request carries options as a `criteria` object whose keys
