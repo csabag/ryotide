@@ -44,7 +44,7 @@ except ImportError:
     _vendor = os.path.join(os.path.dirname(__file__), "..", "..", "vendor", "jevbench")
     sys.path.insert(0, os.path.abspath(_vendor))
 
-from .jevbench_adapter import DEFAULT_INSTRUCTION, MlxJevLocalAdapter
+from .jevbench_adapter import DEFAULT_INSTRUCTION, MAX_CODES, MlxJevLocalAdapter
 
 NOUL_LABELS = ["no", "yes"]
 
@@ -88,6 +88,8 @@ def task_from_request(body: dict, option_order: str = "natural") -> SimpleNamesp
         if not isinstance(crit, dict) or len(crit) < 2:
             raise BadRequest("choice needs a 'criteria' object with at least two options")
         labels = [str(k) for k in crit]
+        if len(labels) > MAX_CODES:
+            raise BadRequest(f"choice has {len(labels)} options; at most {MAX_CODES} are supported")
         if option_order == "natural":
             labels.sort(key=natural_key)
     elif qtype == "score":
@@ -128,7 +130,8 @@ class Engine:
         self.config = {"orders": a.orders, "repeat": a.repeat, "answer_prefix": a.prefix,
                        "marker_pattern": a.marker, "instruction": DEFAULT_INSTRUCTION,
                        "layout": "state / question / question (echo always)",
-                       "temperature": a.temperature, "option_order": a.option_order}
+                       "temperature": a.temperature, "option_order": a.option_order,
+                       "markers": "letters A-Z up to 26 options; codes A0-Z9 (two-step read) above"}
         self.prompt_hash = hashlib.sha256(json.dumps(self.config, sort_keys=True)
                                           .encode()).hexdigest()[:12]
 

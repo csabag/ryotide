@@ -146,6 +146,56 @@ class TorchClassifier:
         return (0 if self.device == "cuda" else self.device) if (self.quant or self.low_vram) \
             else self.device
 
+    PREFILL_CHUNK = 2048
+
+    def _prefill(self, tokens: Sequence[int]):
+        """Run the prompt through the model in chunks, keeping the cache; return the
+        last position's logits and the cache. Peak memory is then the weights plus
+        the cache plus one chunk's activations, not a full-sequence forward -- a
+        single pass measured +0.24 GB per 1k tokens on Gemma 4 E4B and ran out of
+        memory at 32k tokens on a 24 GB card. Chunking is exact up to arithmetic
+        order: the model sees the same tokens at the same positions."""
+        torch = self.torch
+        dev = self._input_device()
+        toks = list(tokens)
+        cache = None
+        with torch.inference_mode():
+            for i in range(0, len(toks) - 1, self.PREFILL_CHUNK):
+                chunk = torch.tensor([toks[i: min(i + self.PREFILL_CHUNK, len(toks) - 1)]], device=dev)
+                cache = self.model(input_ids=chunk, past_key_values=cache, use_cache=True,
+                                   logits_to_keep=1).past_key_values
+            out = self.model(input_ids=torch.tensor([toks[-1:]], device=dev), past_key_values=cache,
+                             use_cache=True, logits_to_keep=1)
+        return out.logits[0, -1].float(), out.past_key_values
+
+    def read_codes(self, tokens: Sequence[int], letter_ids: Sequence[int],
+                   digit_ids: Sequence[Sequence[int]]):
+        """Two-step read for A0..Z9 codes: one pass over the prompt with the cache
+        kept, then per group one token on a copy of that cache.
+
+        Returns (P over group letters, full-vocab P of each letter,
+                 P over each group's digits, full-vocab mass on each group's digits).
+        """
+        import copy
+        torch = self.torch
+        row, prefix_cache = self._prefill(tokens)
+        with torch.inference_mode():
+            full = torch.softmax(row, -1)
+            sel = torch.tensor(list(letter_ids), device=row.device)
+            p_group = torch.softmax(row[sel], -1).tolist()
+            full_group = full[sel].tolist()
+            p_digits, mass_digits = [], []
+            for lid, dids in zip(letter_ids, digit_ids):
+                cache = copy.deepcopy(prefix_cache)
+                step = torch.tensor([[lid]], device=self._input_device())
+                row2 = self.model(input_ids=step, past_key_values=cache, logits_to_keep=1,
+                                  use_cache=True).logits[0, -1].float()
+                dsel = torch.tensor(list(dids), device=row2.device)
+                mass_digits.append(float(torch.softmax(row2, -1)[dsel].sum()))
+                p_digits.append(torch.softmax(row2[dsel], -1).tolist())
+                del cache
+        return p_group, full_group, p_digits, mass_digits
+
     def read(self, tokens: Sequence[int], marker_ids: Sequence[int]) -> tuple[list[float], float]:
         """One forward pass; the next-token distribution at the LAST position.
 
@@ -153,11 +203,8 @@ class TorchClassifier:
         the full-vocabulary softmax that sat on the markers before masking.
         """
         torch = self.torch
-        ids = torch.tensor([list(tokens)], device=self._input_device())
-        with torch.inference_mode():
-            # logits_to_keep=1: never materialise [n_tokens, vocab] logits
-            out = self.model(input_ids=ids, logits_to_keep=1, use_cache=False)
-        row = out.logits[0, -1].float()
+        row, cache = self._prefill(tokens)     # chunked; logits only at the last position
+        del cache
         sel = torch.tensor(list(marker_ids), device=row.device)
         mass = float(torch.softmax(row, -1)[sel].sum())
         probs = torch.softmax(row[sel], -1).tolist()

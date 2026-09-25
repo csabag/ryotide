@@ -40,6 +40,13 @@ if TYPE_CHECKING:
 # must be able to import this module (and serve decisions) without it.
 
 LETTERS = "ABCDEFGHIJKLMNOP"
+# Past 26 options, markers become two-token codes: a letter (group) then a digit.
+# A0..Z9 = 260 codes, above the TypeSafe API's 255-option ceiling. Both tokenizers
+# we ship split every code into exactly [letter][digit], in the option list and at
+# the answer position (checked on all 260 for Qwen3.5-4B and Gemma 4 E4B).
+CODE_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+MAX_CODES = len(CODE_LETTERS) * 10
+CODE_INSTRUCTION = "Reply with the code (letter and digit) of the single best option."
 
 
 def _state_text(state: Any) -> str:
@@ -120,6 +127,11 @@ class MlxJevLocalAdapter:
         quant: str | None = None,        # torch only: "int8" | "nf4" (bitsandbytes, CUDA)
         low_vram: bool = False,          # torch only: keep embeddings / unused towers on CPU
         temperature: float = 1.0,        # softmax temperature over the option markers
+        force_codes: bool = False,       # use A0..Z9 codes even for <= 26 options (checks only)
+        code_reader: str = "digits",     # > 26 options: "digits" (one prompt, codes A0..Z9, read
+                                         # letter then digit -- exact) or "grouped" (repeated letters
+                                         # A A B B, pick likeliest groups, re-ask them with letters)
+        group_size: int | None = None,   # grouped reader: options per group (default ceil(n/26))
     ):
         # `endpoint` carries the model id/path, matching the other local adapters.
         self.path = endpoint or model or "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
@@ -139,7 +151,10 @@ class MlxJevLocalAdapter:
         self.repeat_min_options = echo_min_options   # repeat only if MORE than this many options
         self.instruction = instruction or DEFAULT_INSTRUCTION
         self.question_first = question_first
-        self.markers = list(markers) if markers else list(LETTERS)
+        # Single letters up to 26 options (A-Z are single tokens in the tokenizers we
+        # ship); two-token codes only beyond. Up to 16 options this is exactly the
+        # v0.1 marker set, so those decisions are unchanged.
+        self.markers = list(markers) if markers else list(CODE_LETTERS)
         if backend not in ("mlx", "torch"):
             raise ValueError(f"unknown backend {backend!r}")
         self.backend = backend
@@ -151,6 +166,11 @@ class MlxJevLocalAdapter:
         if not temperature > 0:
             raise ValueError("temperature must be > 0")
         self.temperature = float(temperature)
+        self.force_codes = force_codes
+        if code_reader not in ("digits", "grouped"):
+            raise ValueError(f"unknown code_reader {code_reader!r}")
+        self.code_reader = code_reader
+        self.group_size = group_size
         self._clf: Classifier | None = None
         self._letter_ids: dict[int, list[int]] = {}
         self._suffix: str | None = None      # chosen by _calibrate_read_position
@@ -264,6 +284,103 @@ class MlxJevLocalAdapter:
         mass = float(mx.sum(mx.softmax(row.astype(mx.float32))[sel]).item())
         return mx.softmax(row[sel].astype(mx.float32)).tolist(), mass
 
+    def _uses_codes(self, n_slots: int) -> bool:
+        if n_slots > MAX_CODES:
+            raise ValueError(f"{n_slots} options; at most {MAX_CODES} are supported")
+        return self.force_codes or n_slots > len(self.markers)
+
+    def _code_ids(self, n_slots: int) -> tuple[list[int], list[list[int]]]:
+        """Token ids of the group letters in use, and of the digits used in each group."""
+        tok = self._clf.tokenizer
+        groups = (n_slots + 9) // 10
+        enc = lambda s: tok.encode(s, add_special_tokens=False)
+        letters = [enc(self._pattern.format(CODE_LETTERS[g])) for g in range(groups)]
+        digits = [enc(str(d)) for d in range(10)]
+        if any(len(x) != 1 for x in letters + digits):
+            raise ValueError("code markers are not single tokens for this tokenizer")
+        letter_ids = [x[0] for x in letters]
+        digit_ids = [[digits[d][0] for d in range(min(10, n_slots - 10 * g))] for g in range(groups)]
+        return letter_ids, digit_ids
+
+    def _read_codes(self, toks: Sequence[int], n_slots: int) -> tuple[list[float], float]:
+        """Two-step read over A0..Z9 codes: P(slot) = P(letter) * P(digit | letter).
+
+        Step 1 reads the group letters at the answer position; step 2 appends each
+        letter on its own branch of the prefilled cache and reads that group's
+        digits. Exact, sums to 1. The returned mass is the full-vocabulary
+        probability of emitting any valid code.
+        """
+        letter_ids, digit_ids = self._code_ids(n_slots)
+        clf = self._clf
+        if self.backend == "torch":
+            p_group, full_group, p_digits, mass_digits = clf.read_codes(toks, letter_ids, digit_ids)
+        else:
+            import mlx.core as mx
+            from .branch import fork_cache
+            cache = clf.prefill([])
+            row = clf.logits_at_end(cache, toks)
+            full = mx.softmax(row.astype(mx.float32))
+            full_group = [float(full[i].item()) for i in letter_ids]
+            p_group = mx.softmax(row[mx.array(letter_ids)].astype(mx.float32)).tolist()
+            p_digits, mass_digits = [], []
+            for lid, dids in zip(letter_ids, digit_ids):
+                br = fork_cache(cache)
+                row2 = clf.logits_at_end(br, [lid])
+                sel = mx.array(dids)
+                mass_digits.append(float(mx.sum(mx.softmax(row2.astype(mx.float32))[sel]).item()))
+                p_digits.append(mx.softmax(row2[sel].astype(mx.float32)).tolist())
+                del br
+        p = [pg * pd for pg, ds in zip(p_group, p_digits) for pd in ds]
+        mass = sum(fg * md for fg, md in zip(full_group, mass_digits))
+        return p, mass
+
+    GROUPED_KEEP_MASS = 0.95     # keep groups until they cover this much pass-1 probability
+    GROUPED_MAX_OPTIONS = 26     # ... and at most this many options go into pass 2
+
+    def _read_grouped(self, task, order: Sequence[int], n_slots: int) -> tuple[list[float], float, int]:
+        """The "grouped" reader. Pass 1 lists every option, but the options of one
+        group share a letter (A A A B B B ...), so only familiar single letters are
+        read; group size is the smallest that fits 26 letters, ceil(n / 26). Pass 2
+        re-asks the likeliest groups with their own letters. Options in dropped
+        groups keep their group's pass-1 share, spread evenly -- an approximation,
+        unlike the exact "digits" reader. Returns (P over slots, mass, groups kept)."""
+        size = self.group_size or -(-n_slots // len(CODE_LETTERS))
+        if -(-n_slots // size) > len(CODE_LETTERS):
+            raise ValueError(f"group size {size} gives more than {len(CODE_LETTERS)} groups")
+        groups = -(-n_slots // size)
+        toks1 = self._tokens(self._prompt(task, order, group_size=size))
+        p_group, mass1 = self._read(toks1, self._letters(groups))
+        return self._grouped_pass2(task, order, p_group, mass1, size, n_slots)
+
+    def _grouped_pass2(self, task, order, p_group, mass1, size, n_slots):
+        """Keep the likeliest groups, re-ask with only their options as A, B, C..."""
+        from types import SimpleNamespace
+        sizes = [min(size, n_slots - size * g) for g in range(len(p_group))]
+        ranked = sorted(range(len(p_group)), key=lambda g: -p_group[g])
+        kept, cum, count = [], 0.0, 0
+        for g in ranked:
+            if kept and (cum >= self.GROUPED_KEEP_MASS or count + sizes[g] > self.GROUPED_MAX_OPTIONS):
+                break
+            kept.append(g); cum += p_group[g]; count += sizes[g]
+        kept.sort()
+        slots = [s for g in kept for s in range(size * g, size * g + sizes[g])]
+        sub_labels = [task.labels[order[s]] for s in slots]
+        sub = SimpleNamespace(state=task.state, labels=sub_labels, question=task.question,
+                              task_id=getattr(task, "task_id", None))
+        # Pass 2 always reads plain letters (<= 26 options by construction), so it is
+        # always written with plain letters -- even when codes are being forced.
+        toks2 = self._tokens(self._prompt(sub, list(range(len(slots))), letters_only=True))
+        p2, mass2 = self._read(toks2, self._letters(len(slots)))
+        kept_mass = sum(p_group[g] for g in kept)
+        p = [0.0] * n_slots
+        for g in range(len(p_group)):
+            if g not in kept:
+                for s in range(size * g, size * g + sizes[g]):
+                    p[s] = p_group[g] / sizes[g]
+        for j, s in enumerate(slots):
+            p[s] = kept_mass * p2[j]
+        return p, mass1 * mass2, len(kept)
+
     def _letters(self, n: int, pattern: str | None = None) -> list[int]:
         """Token ids for the first n option markers under one surface form."""
         pat = pattern or self._pattern
@@ -280,26 +397,35 @@ class MlxJevLocalAdapter:
 
     # -- prompt ------------------------------------------------------------
 
-    def _prompt(self, task, order: Sequence[int]) -> str:
+    def _prompt(self, task, order: Sequence[int], group_size: int | None = None,
+                letters_only: bool = False) -> str:
         q = task.question
         idk = self._idk_active(task)
         # Slot 0 when idk_first, else the final slot. Position is load-bearing:
         # correct answers sit at index 0 on 27.9% of hard items and index 4 on
         # 1.8%, so an escape hatch parked last is one the model rarely considers.
         offset = 1 if (idk and self.idk_first) else 0
+        n_slots = len(order) + (1 if idk else 0)
+        codes = self._uses_codes(n_slots) and not group_size and not letters_only
+        if group_size:          # every option of a group shares its group's letter
+            mark = lambda s: CODE_LETTERS[s // group_size]
+        elif codes:
+            mark = lambda s: CODE_LETTERS[s // 10] + str(s % 10)
+        else:
+            mark = lambda s: self.markers[s]
         lines = []
         if idk and self.idk_first:
-            lines.append(f"{self.markers[0]}. {IDK_TEXT}")
+            lines.append(f"{mark(0)}. {IDK_TEXT}")
         for slot, li in enumerate(order):
             label = task.labels[li]
             crit = _criterion_for(q, label, li)
-            lines.append(f"{self.markers[slot + offset]}. {label}" + (f" - {crit}" if crit else ""))
+            lines.append(f"{mark(slot + offset)}. {label}" + (f" - {crit}" if crit else ""))
         if idk and not self.idk_first:
-            lines.append(f"{self.markers[len(order)]}. {IDK_TEXT}")
+            lines.append(f"{mark(len(order))}. {IDK_TEXT}")
         body = (
             f"{q['instructions']}\n\n"
             f"Options:\n" + "\n".join(lines) + "\n\n"
-            + self.instruction
+            + (CODE_INSTRUCTION if codes else self.instruction)
         )
         # The echo: emit the question body twice, after the state (S/Q/Q). The
         # state is never repeated -- it is the expensive part. It helps, but the
@@ -379,14 +505,17 @@ class MlxJevLocalAdapter:
         t0 = time.perf_counter()
         try:
             self._calibrate_read_position(task)
-            letters = self._letters(n)
+            use_idk = self._idk_active(task)
+            n_slots = n + (1 if use_idk else 0)
+            codes = self._uses_codes(n_slots)
+            letters = None if codes else self._letters(n)
             orders = _orders(n, self.orders)
             prompts = [self._tokens(self._prompt(task, o)) for o in orders]
 
             # Every order shares the state prefix: prefill it once, branch per order.
             # (MLX only -- the torch backend runs each order as one full pass.)
             shared = 0
-            if len(prompts) > 1 and self.backend == "mlx":
+            if len(prompts) > 1 and self.backend == "mlx" and not codes:
                 shortest = min(len(p) for p in prompts)
                 while shared < shortest and len({p[shared] for p in prompts}) == 1:
                     shared += 1
@@ -399,11 +528,16 @@ class MlxJevLocalAdapter:
             totals = [0.0] * n
             marker_mass: list[float] = []
             idk_probs: list[float] = []
-            use_idk = self._idk_active(task)
-            read = self._letters(n + 1) if use_idk else letters
+            read = None if codes else (self._letters(n + 1) if use_idk else letters)
             for order, toks in zip(orders, prompts):
                 branch = fork_cache(base) if shared else None
-                p, mass = self._read(toks[shared:], read, cache=branch)
+                two_pass = codes and not use_idk and task.question.get("type") == "choice"
+                if two_pass and self.code_reader == "grouped":
+                    p, mass, groups_kept = self._read_grouped(task, order, n_slots)
+                elif codes:
+                    p, mass = self._read_codes(toks, n_slots)
+                else:
+                    p, mass = self._read(toks[shared:], read, cache=branch)
                 marker_mass.append(mass)
                 if self.temperature != 1.0:
                     # softmax(z / T) over the markers, from softmax(z): the order of
@@ -457,6 +591,8 @@ class MlxJevLocalAdapter:
                 "question_first": self.question_first,
                 "quant": self.quant,
                 "temperature": self.temperature,
+                "markers": ({"grouped": "grouped letters A A B B, then letters",
+                              "digits": "codes A0-Z9 (two-step read)"}[self.code_reader] if codes else "letters"),
                 "low_vram_offloaded": getattr(clf, "offloaded", None),
                 "instruction": self.instruction,
                 # Share of the FULL vocab distribution sitting on the markers.

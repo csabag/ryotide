@@ -28,6 +28,14 @@ ap.add_argument("--echo-min-options", type=int, default=0,
                      "2 reproduces the earlier gated runs)")
 ap.add_argument("--temperature", type=float, default=1.0,
                 help="softmax temperature over the option markers (fit with bench/fit_temperature.py)")
+ap.add_argument("--code-reader", choices=("digits", "grouped"), default="digits",
+                help="more than 26 options: codes A0..Z9 read letter then digit (exact), or grouped letters then re-ask")
+ap.add_argument("--markers", default=None,
+                help="option markers as one string, e.g. 123456789 (default: letters A-Z)")
+ap.add_argument("--group-size", type=int, default=None,
+                help="grouped reader: options per group (default ceil(n/26))")
+ap.add_argument("--force-codes", action="store_true",
+                help="use A0..Z9 codes even for <= 16 options (exactness checks)")
 ap.add_argument("--backend", choices=("mlx", "torch"), default="mlx")
 ap.add_argument("--device", default=None, help="torch only: cuda | mps | cpu")
 ap.add_argument("--revision", default=None, help="pin the model revision (torch)")
@@ -39,6 +47,8 @@ ap.add_argument("--qfirst", action="store_true", help="also emit the question be
 ap.add_argument("--instruction", default=None, help="override the closing instruction line")
 ap.add_argument("--marker", default=None, help="pin the marker surface form, e.g. '{}' or ' {}'")
 a = ap.parse_args()
+if a.markers and a.markers.isdigit() and a.instruction is None:
+    a.instruction = "Reply with the number of the single best option."   # match the markers
 
 tasks = []
 for part in a.tasks.split(","):
@@ -59,7 +69,10 @@ ad = MlxJevLocalAdapter(endpoint=a.model, orders=a.orders, chat=not a.no_chat,
                         instruction=a.instruction, question_first=a.qfirst,
                         backend=a.backend, device=a.device, revision=a.revision,
                         echo_min_options=a.echo_min_options,
-                        quant=a.quant, low_vram=a.low_vram, temperature=a.temperature)
+                        quant=a.quant, low_vram=a.low_vram, temperature=a.temperature,
+                        force_codes=a.force_codes, code_reader=a.code_reader,
+                        group_size=a.group_size,
+                        markers=list(a.markers) if a.markers else None)
 t0 = time.perf_counter(); ad.load()
 print(f"[warm load {time.perf_counter()-t0:.1f}s] model={a.model} orders={a.orders} "
       f"chat={not a.no_chat} franken={fr} dtype={a.dtype} tasks={len(tasks)}", flush=True)
