@@ -36,6 +36,11 @@ brackets).
   system RAM peaks at ~28 GB. Useful only where loading fits and running memory does
   not; not for this card.
 
+From `v0.2.0` the PyTorch backend prefills long prompts in 2,048-token chunks, so long
+inputs no longer add much to these peaks: on the same card a 62k-token prompt peaked at
+19.0 GB for Gemma 4 E4B bf16 and 12.9 GB for Qwen3.5-4B bf16. The peaks above are for
+the hard tier (prompts up to ~4k tokens).
+
 ## 2. One-time WSL setup
 
 On **Windows** (PowerShell as administrator):

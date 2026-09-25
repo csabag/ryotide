@@ -27,6 +27,11 @@ the question is asked after the state and echoed once (S/Q/Q), the answer is rea
 the next-token distribution over the option markers after `Answer: **`, masked and
 renormalised. Nothing is trained. Each entry is one pinned preset.
 
+The JevBench request ([#82](https://github.com/fstandhartinger/jevbench/issues/82)) pins
+tag **`v0.1.0`**; the table below is that release. `v0.2.0` adds menus of up to 260
+options and bounded memory for long inputs ([below](#v02-large-menus-and-long-inputs));
+up to 26 options its decisions are unchanged.
+
 | entry | weights (revision) | temperature | public 231, via the wire | hard | hard ECE |
 |---|---|---|---|---|---|
 | **RYOTIDE-Qwen** | `Qwen/Qwen3.5-4B` (`851bf6e8`), Apache-2.0 | 1.0 | 184/231 (0.797) | 0.658 | 0.076 |
@@ -232,8 +237,9 @@ position, option markers, label folding — and differ only in the forward pass:
   (Apache-2.0), pinned to revision `ee0ef6023621cff504d758262d4e04895a5af4a2`.
   MLX is imported lazily, so a CUDA host never needs it.
 
-Both report the same prompt hash on `/health` when configured alike (`135c2ebd8537`
-for the defaults), so an evaluator can confirm which configuration is being served.
+Both report the same prompt hash on `/health` when configured alike, so an evaluator
+can confirm which configuration is being served (`135c2ebd8537` for the defaults at
+`v0.1.0`; v0.2 hashes [below](#v02-large-menus-and-long-inputs)).
 
 Gemma 4 E4B 8-bit, 231 public decisions, one pass per decision:
 
@@ -308,6 +314,49 @@ peak, so it does not make Gemma fit a 12 GB card. **Windows / WSL2 + CUDA:** ste
 setup, commands and expected numbers in [`docs/WSL-CUDA.md`](docs/WSL-CUDA.md);
 `bench/compare_runs.py <reference> <new>` checks a run against ours.
 
+## v0.2: large menus and long inputs
+
+JevBench never offers more than 6 options, but other Jev-style suites do: the Jev
+Decision Index asks CLINC150 with 151 intents, BANKING77, chord and chess menus, up to the
+TypeSafe API's 255. v0.1 read single letters A-P and could not answer past 16.
+
+- **Up to 26 options:** single letters A-Z. Up to 16 this is exactly v0.1 (bit-identical
+  decisions on JevBench).
+- **More than 26 — `digits` (default):** options get two-token codes `A0 … Z9` (up to 260).
+  One prompt; the answer position is read for the letter, then each letter is appended on
+  a branch of the prefilled cache and the digit is read: P(option) = P(letter) ×
+  P(digit | letter). Exact, and marker mass becomes P(emitting any valid code). All 260
+  codes split into exactly [letter][digit] in both tokenizers.
+- **More than 26 — `grouped` (`--code-reader grouped`):** the options of a group share a
+  letter (`A A A B B B …`, group size ⌈n/26⌉), so only familiar letters are read; the
+  likeliest groups are then re-asked with their own letters, and dropped groups keep their
+  pass-1 share (an approximation, unlike `digits`).
+
+On a synthetic set of banking intents with menus of 20–151 options (labels computed by
+code; `bench/synthetic/gen_many_options.py`), Gemma 4 E4B:
+
+| menu size | chance | `digits` | `grouped` |
+|---|---|---|---|
+| 27 / 40 / 77 (90 items) | 1–4% | 78/90 | 77/90 |
+| 151 (30 items, incl. out-of-scope) | 0.7% | 24/30 | 25/30 |
+
+Every read is valid (marker mass ≥ 0.97). Forced onto 20–26-option menus, where letters
+work, both match letters (53/60 → 54 and 53). Two other readers (a coded menu re-asked with
+letters; groups written as "A. x or y or z") were measured and dropped: no advantage, and
+the second trailed. Plain digit labels (`1.`–`9.`) instead of letters for small menus were
+also tested and rejected: no gain on the synthetic set, and slightly worse on JevBench.
+
+**Long inputs.** The PyTorch backend now prefills in 2,048-token chunks (MLX already did).
+A single pass grew +0.24 GB per 1k tokens and ran out of memory at 32k tokens on a 24 GB
+card; chunked, Gemma 4 E4B reads a 62k-token prompt at 19.0 GB peak and Qwen3.5-4B at
+12.9 GB, with valid reads. Decisions are unchanged against the single pass up to rounding
+(wire test 230/231 identical; the one change is a dead tie). The Gemma temperature, fit on
+2–4-option menus, still helps on large ones (ECE 0.136 → 0.081 on 27–151 options), though
+Gemma stays somewhat overconfident on the largest.
+
+`/health` prompt hashes for the presets at v0.2 (the config now names the marker scheme):
+`ryotide-qwen` `0f4adc92116f`, `ryotide-gemma` `c2a5016e71b7`.
+
 ## Running
 
 ```bash
@@ -315,6 +364,9 @@ uv run python bench/run_jevbench.py --model mlx-community/Qwen3.5-4B-MLX-8bit --
 uv run --extra torch python bench/run_jevbench.py --backend torch --model google/gemma-4-E4B-it \
     --revision ee0ef6023621cff504d758262d4e04895a5af4a2 --orders 1 --repeat 2 \
     --prefix 'Answer: **' --marker '{}' --tag torch-run
+uv run python bench/run_jevbench.py --model mlx-community/gemma-4-e4b-it-8bit \
+    --tasks data/synthetic/many-options-v1.jsonl --tag many-options      # --code-reader grouped
+uv run python bench/synthetic/analyze_many_options.py many-options
 uv run python bench/score_jevbench.py myrun
 uv run python bench/selective_curve.py myrun
 uv run python -m ryotide.cli classify state.txt -q "Q: ...? Answer yes or no.\nA:"
