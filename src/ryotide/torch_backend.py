@@ -148,7 +148,20 @@ class TorchClassifier:
 
     PREFILL_CHUNK = 2048
 
-    def _prefill(self, tokens: Sequence[int]):
+    def extend(self, tokens: Sequence[int], cache=None):
+        """Feed tokens into `cache` (a fresh one if None), chunked; return the cache.
+        Used to read a shared state once before branching per question."""
+        torch = self.torch
+        dev = self._input_device()
+        toks = list(tokens)
+        with torch.inference_mode():
+            for i in range(0, len(toks), self.PREFILL_CHUNK):
+                chunk = torch.tensor([toks[i:i + self.PREFILL_CHUNK]], device=dev)
+                cache = self.model(input_ids=chunk, past_key_values=cache, use_cache=True,
+                                   logits_to_keep=1).past_key_values
+        return cache
+
+    def _prefill(self, tokens: Sequence[int], cache=None):
         """Run the prompt through the model in chunks, keeping the cache; return the
         last position's logits and the cache. Peak memory is then the weights plus
         the cache plus one chunk's activations, not a full-sequence forward -- a
@@ -158,7 +171,6 @@ class TorchClassifier:
         torch = self.torch
         dev = self._input_device()
         toks = list(tokens)
-        cache = None
         with torch.inference_mode():
             for i in range(0, len(toks) - 1, self.PREFILL_CHUNK):
                 chunk = torch.tensor([toks[i: min(i + self.PREFILL_CHUNK, len(toks) - 1)]], device=dev)
@@ -169,7 +181,7 @@ class TorchClassifier:
         return out.logits[0, -1].float(), out.past_key_values
 
     def read_codes(self, tokens: Sequence[int], letter_ids: Sequence[int],
-                   digit_ids: Sequence[Sequence[int]]):
+                   digit_ids: Sequence[Sequence[int]], cache=None):
         """Two-step read for A0..Z9 codes: one pass over the prompt with the cache
         kept, then per group one token on a copy of that cache.
 
@@ -178,7 +190,8 @@ class TorchClassifier:
         """
         import copy
         torch = self.torch
-        row, prefix_cache = self._prefill(tokens)
+        import copy as _copy
+        row, prefix_cache = self._prefill(tokens, _copy.deepcopy(cache) if cache is not None else None)
         with torch.inference_mode():
             full = torch.softmax(row, -1)
             sel = torch.tensor(list(letter_ids), device=row.device)
@@ -196,14 +209,17 @@ class TorchClassifier:
                 del cache
         return p_group, full_group, p_digits, mass_digits
 
-    def read(self, tokens: Sequence[int], marker_ids: Sequence[int]) -> tuple[list[float], float]:
+    def read(self, tokens: Sequence[int], marker_ids: Sequence[int], cache=None) -> tuple[list[float], float]:
         """One forward pass; the next-token distribution at the LAST position.
 
         Returns (probabilities over the markers, renormalised) and the share of
         the full-vocabulary softmax that sat on the markers before masking.
         """
         torch = self.torch
-        row, cache = self._prefill(tokens)     # chunked; logits only at the last position
+        import copy as _copy
+        # With a shared-prefix `cache`, continue a private copy of it: the prefix is
+        # read once per request and never modified by any one question.
+        row, cache = self._prefill(tokens, _copy.deepcopy(cache) if cache is not None else None)
         del cache
         sel = torch.tensor(list(marker_ids), device=row.device)
         mass = float(torch.softmax(row, -1)[sel].sum())

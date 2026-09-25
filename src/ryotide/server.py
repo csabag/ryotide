@@ -71,14 +71,25 @@ class BadRequest(ValueError):
     pass
 
 
-def task_from_request(body: dict, option_order: str = "natural") -> SimpleNamespace:
-    """Rebuild the adapter's task view from one /v1/systemone request."""
+def tasks_from_request(body: dict, option_order: str = "natural") -> list:
+    """One task per question of a /v1/systemone request; they share the state."""
     if not isinstance(body, dict) or "state" not in body:
         raise BadRequest("body must be an object with 'state' and 'questions'")
     qs = body.get("questions")
-    if not isinstance(qs, dict) or len(qs) != 1:
-        raise BadRequest("exactly one question is supported per request")
-    (key, q), = qs.items()
+    if not isinstance(qs, dict) or not qs:
+        raise BadRequest("'questions' must be a non-empty object")
+    return [task_from_question(body["state"], key, q, option_order) for key, q in qs.items()]
+
+
+def task_from_request(body: dict, option_order: str = "natural") -> SimpleNamespace:
+    """Single-question view (kept for callers and tests)."""
+    tasks = tasks_from_request(body, option_order)
+    if len(tasks) != 1:
+        raise BadRequest("expected exactly one question")
+    return tasks[0]
+
+
+def task_from_question(state, key: str, q, option_order: str) -> SimpleNamespace:
     if not isinstance(q, dict) or not isinstance(q.get("instructions"), str):
         raise BadRequest(f"question {key!r} needs 'type' and 'instructions'")
     qtype, crit = q.get("type"), q.get("criteria")
@@ -101,7 +112,7 @@ def task_from_request(body: dict, option_order: str = "natural") -> SimpleNamesp
     question = {"type": qtype, "instructions": q["instructions"]}
     if crit is not None:
         question["criteria"] = crit
-    return SimpleNamespace(key=key, state=body["state"], question=question, labels=labels,
+    return SimpleNamespace(key=key, state=state, question=question, labels=labels,
                            task_id=f"wire-{key}", family=None)
 
 
@@ -136,16 +147,21 @@ class Engine:
                                           .encode()).hexdigest()[:12]
 
     def decide(self, body: dict) -> dict:
-        task = task_from_request(body, self.option_order)
+        tasks = tasks_from_request(body, self.option_order)
+        t0 = time.perf_counter()
         with self.lock:                      # MLX is not thread-safe
-            res = self.adapter.run(task)
-        if not res.ok:
-            raise RuntimeError(res.error or "decision failed")
+            results = (self.adapter.run_many(tasks) if len(tasks) > 1
+                       else [self.adapter.run(tasks[0])])
+        bad = [(t.key, r.error) for t, r in zip(tasks, results) if not r.ok]
+        if bad:
+            raise RuntimeError(f"question {bad[0][0]!r}: {bad[0][1] or 'decision failed'}")
         return {"model": self.model,
-                "answers": {task.key: answer_for(task.question["type"], res.probs)},
-                "usage": res.usage,
-                "runtime": {"latency_s": round(res.latency_s or 0.0, 4),
-                            "marker_mass": res.raw["runtime"]["marker_mass"]}}
+                "answers": {t.key: answer_for(t.question["type"], r.probs) for t, r in zip(tasks, results)},
+                "usage": {"input_tokens": sum(r.usage.get("input_tokens", 0) for r in results),
+                          "output_tokens": 0},
+                "runtime": {"latency_s": round(time.perf_counter() - t0, 4), "questions": len(tasks),
+                            "shared_prefix_tokens": results[0].raw["runtime"]["shared_prefix_tokens"],
+                            "marker_mass": min(r.raw["runtime"]["marker_mass"] for r in results)}}
 
     def health(self) -> dict:
         dev = getattr(self.adapter._clf, "device", None)

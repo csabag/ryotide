@@ -302,7 +302,7 @@ class MlxJevLocalAdapter:
         digit_ids = [[digits[d][0] for d in range(min(10, n_slots - 10 * g))] for g in range(groups)]
         return letter_ids, digit_ids
 
-    def _read_codes(self, toks: Sequence[int], n_slots: int) -> tuple[list[float], float]:
+    def _read_codes(self, toks: Sequence[int], n_slots: int, prefix=None) -> tuple[list[float], float]:
         """Two-step read over A0..Z9 codes: P(slot) = P(letter) * P(digit | letter).
 
         Step 1 reads the group letters at the answer position; step 2 appends each
@@ -312,13 +312,15 @@ class MlxJevLocalAdapter:
         """
         letter_ids, digit_ids = self._code_ids(n_slots)
         clf = self._clf
+        pcache, plen = prefix if prefix else (None, 0)
         if self.backend == "torch":
-            p_group, full_group, p_digits, mass_digits = clf.read_codes(toks, letter_ids, digit_ids)
+            p_group, full_group, p_digits, mass_digits = clf.read_codes(toks[plen:], letter_ids, digit_ids,
+                                                                        cache=pcache)
         else:
             import mlx.core as mx
             from .branch import fork_cache
-            cache = clf.prefill([])
-            row = clf.logits_at_end(cache, toks)
+            cache = fork_cache(pcache) if prefix else clf.prefill([])
+            row = clf.logits_at_end(cache, toks[plen:])
             full = mx.softmax(row.astype(mx.float32))
             full_group = [float(full[i].item()) for i in letter_ids]
             p_group = mx.softmax(row[mx.array(letter_ids)].astype(mx.float32)).tolist()
@@ -450,6 +452,36 @@ class MlxJevLocalAdapter:
             return body + "\n\n" + state + "\n\n" + body
         return state + "\n\n" + body
 
+    MIN_SHARED_PREFIX = 32      # below this, sharing saves nothing worth the bookkeeping
+
+    def run_many(self, tasks):
+        """Several questions about ONE state (TypeSafe's multi-question request).
+
+        The state is read once; each question is then answered on its own branch of
+        that cache (MLX: fork_cache, verified bit-exact; torch: a private copy), so it
+        costs only its own tokens. Falls back to independent decisions where sharing
+        does not apply: a single question, several option orders, the grouped reader."""
+        tasks = list(tasks)
+        if len(tasks) < 2 or self.orders > 1 or self.code_reader == "grouped":
+            return [self.run(t) for t in tasks]
+        clf = self.load()
+        self._calibrate_read_position(tasks[0])
+        toks = [self._tokens(self._prompt(t, list(range(len(t.labels))))) for t in tasks]
+        plen, shortest = 0, min(len(t) for t in toks)
+        while plen < shortest and len({t[plen] for t in toks}) == 1:
+            plen += 1
+        plen = min(plen, shortest - 1)           # every question keeps >= 1 own token
+        if plen < self.MIN_SHARED_PREFIX:
+            return [self.run(t) for t in tasks]
+        head = toks[0][:plen]
+        cache = clf.extend(head) if self.backend == "torch" else clf.prefill(head)
+        results = [self.run(t, prefix=(cache, plen, head)) for t in tasks]
+        for i, r in enumerate(results):           # the state is read once: bill it once
+            if r.ok and r.usage:
+                r.usage["input_tokens"] = r.usage["input_tokens"] - (plen if i else 0)
+        del cache
+        return results
+
     def _idk_active(self, task) -> bool:
         """Add the escape hatch only where the task does not already have one."""
         return self.idk and not _has_abstain(task)
@@ -489,7 +521,9 @@ class MlxJevLocalAdapter:
 
     # -- the decision ------------------------------------------------------
 
-    def run(self, task):
+    def run(self, task, prefix=None):
+        """One decision. `prefix` = (cache, n_tokens) of a state already read by
+        run_many: this question then only processes its own tokens."""
         from jevbench.adapters.base import DecisionResult  # harness type
 
         res = DecisionResult(adapter=self.name, ok=False,
@@ -515,6 +549,8 @@ class MlxJevLocalAdapter:
             # Every order shares the state prefix: prefill it once, branch per order.
             # (MLX only -- the torch backend runs each order as one full pass.)
             shared = 0
+            if prefix is not None and (len(prompts) != 1 or prompts[0][:prefix[1]] != prefix[2]):
+                prefix = None        # prompt does not start with the shared prefix: read it whole
             if len(prompts) > 1 and self.backend == "mlx" and not codes:
                 shortest = min(len(p) for p in prompts)
                 while shared < shortest and len({p[shared] for p in prompts}) == 1:
@@ -535,7 +571,16 @@ class MlxJevLocalAdapter:
                 if two_pass and self.code_reader == "grouped":
                     p, mass, groups_kept = self._read_grouped(task, order, n_slots)
                 elif codes:
-                    p, mass = self._read_codes(toks, n_slots)
+                    p, mass = self._read_codes(toks, n_slots, prefix=prefix[:2] if prefix else None)
+                    shared = prefix[1] if prefix else shared
+                elif prefix is not None:
+                    pcache, plen = prefix[0], prefix[1]
+                    if self.backend == "torch":
+                        p, mass = clf.read(toks[plen:], read, cache=pcache)
+                    else:
+                        from .branch import fork_cache as _fork
+                        p, mass = self._read(toks[plen:], read, cache=_fork(pcache))
+                    shared = plen
                 else:
                     p, mass = self._read(toks[shared:], read, cache=branch)
                 marker_mass.append(mass)
