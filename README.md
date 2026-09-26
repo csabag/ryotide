@@ -387,6 +387,31 @@ uv run python bench/run_jevbench.py --backend torch --orders 1 --repeat 2 \
 uv run python bench/public/analyze_intents.py pub-qwen-banking77-s1000
 ```
 
+## v0.3: several questions per request
+
+A TypeSafe request may ask several questions about one state, and the Decision Index
+leans on it (ToolRet averages about 192 questions per request, BRIGHT about 70). v0.2
+rejected anything but one question. Now each question is answered under its own key, and
+the state is read once: `run_many` finds the tokens the questions' prompts share (chat
+header plus state), prefills them once, and answers each question on its own branch of
+that cache (MLX `fork_cache`; PyTorch a private copy, about 2 ms). Usage bills the shared
+state once. A single question, several option orders or the `grouped` reader fall back
+to one decision at a time; a question whose prompt shares fewer than 32 tokens with the
+others (the coded-menu instruction comes before the state) is simply read in full.
+
+Against answering each question alone (`bench/probes/multi_question_check.py`):
+
+| check | Gemma 4 E4B, MLX 8-bit | Gemma 4 E4B, CUDA bf16 | Qwen3.5-4B, CUDA bf16 |
+|---|---|---|---|
+| synthetic, 5 questions per state (200) | 197/200 identical | 199/200 | 196/200 |
+| 40-option coded question + yes/no (20) | 20/20, exact | 20/20, exact | 20/20, exact |
+| 100 questions on a ~4.5k-token state | 100/100, 25× faster | 99/100, 11× faster | 100/100, 12× faster |
+
+The few changed decisions are close calls moved by rounding in a different computation
+order (largest probability change 0.22). On short states sharing is still a little
+faster (Qwen, CUDA, warm: 9.4 s vs 13.7 s for 100 questions). The single-question path,
+and so every JevBench result above, is unchanged.
+
 ## Running
 
 ```bash
