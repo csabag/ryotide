@@ -412,6 +412,15 @@ order (largest probability change 0.22). On short states sharing is still a litt
 faster (Qwen, CUDA, warm: 9.4 s vs 13.7 s for 100 questions). The single-question path,
 and so every JevBench result above, is unchanged.
 
+**v0.3.1:** `instructions` may also be an object, as in the Decision Index's retrieval
+questions (`{"task": ..., "candidate": <document>}`); it is rendered as `key: value` lines.
+v0.3.0 rejected it, which would have failed ToolRet and BRIGHT outright, about 56% of the
+Index's questions. String instructions are untouched, so the prompt hashes are unchanged.
+`bench/probes/di_stress.py` sends twelve requests built to the Index's published shapes
+(200 retrieval questions, 70 long documents, a 9k-word contract, 255 options, JSON and
+empty states, noul questions, a 30k-token state); Qwen on CUDA answers all twelve, the
+largest in 27 s.
+
 ## Running
 
 ```bash

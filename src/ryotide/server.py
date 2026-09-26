@@ -89,8 +89,20 @@ def task_from_request(body: dict, option_order: str = "natural") -> SimpleNamesp
     return tasks[0]
 
 
+def instructions_text(instr) -> str:
+    """TypeSafe allows `instructions` to be an object, e.g. the Decision Index's retrieval
+    questions: {"task": ..., "candidate": <document>}. Render it as "key: value" lines;
+    a string passes through untouched, so string prompts (and their hashes) are unchanged."""
+    if isinstance(instr, str):
+        return instr
+    if isinstance(instr, dict):
+        return "\n".join(f"{k}: {v if isinstance(v, str) else json.dumps(v, ensure_ascii=False)}"
+                         for k, v in instr.items())
+    return json.dumps(instr, ensure_ascii=False)
+
+
 def task_from_question(state, key: str, q, option_order: str) -> SimpleNamespace:
-    if not isinstance(q, dict) or not isinstance(q.get("instructions"), str):
+    if not isinstance(q, dict) or q.get("instructions") in (None, "", {}, []):
         raise BadRequest(f"question {key!r} needs 'type' and 'instructions'")
     qtype, crit = q.get("type"), q.get("criteria")
     if qtype == "noul":
@@ -109,7 +121,7 @@ def task_from_question(state, key: str, q, option_order: str) -> SimpleNamespace
         labels = [str(i) for i in range(len(crit))]
     else:
         raise BadRequest(f"unsupported question type {qtype!r}")
-    question = {"type": qtype, "instructions": q["instructions"]}
+    question = {"type": qtype, "instructions": instructions_text(q["instructions"])}
     if crit is not None:
         question["criteria"] = crit
     return SimpleNamespace(key=key, state=state, question=question, labels=labels,
