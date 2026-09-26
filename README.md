@@ -357,6 +357,36 @@ Gemma stays somewhat overconfident on the largest.
 `/health` prompt hashes for the presets at v0.2 (the config now names the marker scheme):
 `ryotide-qwen` `0f4adc92116f`, `ryotide-gemma` `c2a5016e71b7`.
 
+### Public check: CLINC150 and BANKING77
+
+The synthetic intents above are easier than real ones, so the large-menu path was also run
+on the public test sets, converted by `bench/public/convert_intents.py` straight from the
+original sources (options sorted as on the wire; criteria are the intent names in words).
+Nothing was tuned on them. Each row is a seeded random sample of 1,000 items (about ±2.5
+points), with the presets' settings, on PyTorch/CUDA:
+
+| dataset (options) | chance | Qwen3.5-4B | Gemma 4 E4B |
+|---|---|---|---|
+| BANKING77 (77) | 1.3% | 73.9% | 72.0% |
+| CLINC150 (151), out-of-scope described | 0.7% | 80.4% (in-scope 84.1%, oos recall 61.6%) | 82.7% (in-scope 86.4%, oos recall 64.0%) |
+| CLINC150, out-of-scope named just `oos` | 0.7% | 71.2% (in-scope 85.2%, oos recall 0%) | 72.8% (in-scope 87.1%, oos recall 0%) |
+
+No invalid read in 6,000; marker mass ≥ 0.985 at the 5th percentile; median 0.7–1.6 s per
+item on an RTX PRO 6000. **A "none of these" option works only if it says so.** Under
+CLINC's own label, `oos`, neither model chose it once in 164 out-of-scope items; they
+picked the nearest intent instead. Described as "out of scope: the message matches none of
+the other intents", recall rose to 62–64% for about 1 point of in-scope accuracy. That
+description was added after seeing the first run, so the table shows both. These are
+sanity numbers on samples, not leaderboard claims:
+
+```bash
+uv run python bench/public/convert_intents.py        # -> data/public/ (not committed)
+uv run python bench/run_jevbench.py --backend torch --orders 1 --repeat 2 \
+    --prefix "Answer: **" --marker "{}" --model Qwen/Qwen3.5-4B --temperature 1.0 \
+    --tasks data/public/banking77-s1000.jsonl --tag pub-qwen-banking77-s1000
+uv run python bench/public/analyze_intents.py pub-qwen-banking77-s1000
+```
+
 ## Running
 
 ```bash

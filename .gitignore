@@ -31,3 +31,6 @@ results/**/ledger.jsonl
 results/published/
 # macOS
 .DS_Store
+
+# Converted public datasets (CC-BY); rebuilt by bench/public/convert_intents.py
+/data/public/
