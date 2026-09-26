@@ -254,7 +254,7 @@ class MlxJevLocalAdapter:
                     n = len(t.labels)
                     try:
                         toks = self._tokens(self._prompt(t, list(range(n))), suffix=suf)
-                        masses.append(self._read(toks, self._letters(n, pat))[1])
+                        masses.append(self._read(toks, self._letters(n, pat, suf))[1])
                     except Exception:
                         masses.append(0.0)
                 m = sum(masses) / len(masses)
@@ -292,15 +292,15 @@ class MlxJevLocalAdapter:
 
     def _code_ids(self, n_slots: int) -> tuple[list[int], list[list[int]]]:
         """Token ids of the group letters in use, and of the digits used in each group."""
-        tok = self._clf.tokenizer
         groups = (n_slots + 9) // 10
-        enc = lambda s: tok.encode(s, add_special_tokens=False)
-        letters = [enc(self._pattern.format(CODE_LETTERS[g])) for g in range(groups)]
-        digits = [enc(str(d)) for d in range(10)]
-        if any(len(x) != 1 for x in letters + digits):
+        ctx = self._suffix or ""
+        letter_ids, digit_ids = [], []
+        for g in range(groups):                  # digits are read after their letter, in context
+            first = self._pattern.format(CODE_LETTERS[g])
+            letter_ids.append(self._token_after(ctx, first))
+            digit_ids.append([self._token_after(ctx + first, str(d)) for d in range(min(10, n_slots - 10 * g))])
+        if None in letter_ids or any(None in ds for ds in digit_ids):
             raise ValueError("code markers are not single tokens for this tokenizer")
-        letter_ids = [x[0] for x in letters]
-        digit_ids = [[digits[d][0] for d in range(min(10, n_slots - 10 * g))] for g in range(groups)]
         return letter_ids, digit_ids
 
     def _read_codes(self, toks: Sequence[int], n_slots: int, prefix=None) -> tuple[list[float], float]:
@@ -384,19 +384,33 @@ class MlxJevLocalAdapter:
             p[s] = kept_mass * p2[j]
         return p, mass1 * mass2, len(kept)
 
-    def _letters(self, n: int, pattern: str | None = None) -> list[int]:
-        """Token ids for the first n option markers under one surface form."""
+    def _token_after(self, context: str, piece: str) -> int | None:
+        """The single token the model emits for `piece` right after `context`, or None.
+
+        Read in context, not alone: SentencePiece tokenizers with a dummy prefix
+        (Llama-2 style, e.g. EuroLLM) encode a bare "A" as "▁A", but after
+        "Answer: **" the model writes a plain "A". Reading the bare form there
+        reads a token the model never emits (marker mass 0.000). For Gemma and Qwen
+        both forms are the same id."""
+        tok = self._clf.tokenizer
+        a = tok.encode(context, add_special_tokens=False)
+        b = tok.encode(context + piece, add_special_tokens=False)
+        return b[-1] if len(b) == len(a) + 1 and b[:len(a)] == a else None
+
+    def _letters(self, n: int, pattern: str | None = None, context: str | None = None) -> list[int]:
+        """Token ids for the first n option markers under one surface form, as they
+        follow the answer prefix."""
         pat = pattern or self._pattern
-        key = (n, pat, tuple(self.markers[:n]))
+        ctx = self._suffix if context is None else context
+        ctx = ctx or ""
+        key = (n, pat, ctx, tuple(self.markers[:n]))
         if key in self._letter_ids:
             return self._letter_ids[key]
-        tok = self._clf.tokenizer
-        ids = [tok.encode(pat.format(self.markers[i]), add_special_tokens=False)
-               for i in range(n)]
-        if all(len(x) == 1 for x in ids) and len({x[0] for x in ids}) == n:
-            self._letter_ids[key] = [x[0] for x in ids]
-            return self._letter_ids[key]
-        raise ValueError(f"no single-token marker set for {n} options under {pat!r}")
+        ids = [self._token_after(ctx, pat.format(self.markers[i])) for i in range(n)]
+        if None not in ids and len(set(ids)) == n:
+            self._letter_ids[key] = ids
+            return ids
+        raise ValueError(f"no single-token marker set for {n} options under {pat!r} after {ctx!r}")
 
     # -- prompt ------------------------------------------------------------
 
