@@ -1,6 +1,6 @@
 """run_many (state read once, one branch per question) vs answering each question alone.
 
-    uv run python bench/probes/multi_question_check.py [model]
+    uv run python bench/probes/multi_question_check.py [model] [mlx|torch]
 """
 import sys, json, time, types, random
 from collections import defaultdict
@@ -8,7 +8,8 @@ sys.path.insert(0, "src"); sys.path.insert(0, "vendor/jevbench")
 from ryotide.jevbench_adapter import MlxJevLocalAdapter
 from jevbench.tasks import load_jsonl
 model = sys.argv[1] if len(sys.argv) > 1 else "mlx-community/gemma-4-e4b-it-8bit"
-ad = MlxJevLocalAdapter(endpoint=model, orders=1, repeat=2, pin_prefix="Answer: **", pin_marker="{}")
+backend = sys.argv[2] if len(sys.argv) > 2 else "mlx"
+ad = MlxJevLocalAdapter(endpoint=model, orders=1, repeat=2, pin_prefix="Answer: **", pin_marker="{}", backend=backend)
 ad.load()
 
 def compare(groups, label):
