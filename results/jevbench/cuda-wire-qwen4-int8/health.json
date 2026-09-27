@@ -1,0 +1,1 @@
+{"prompt_hash": "0f4adc92116f", "weights": {"quant": "int8"}, "gpu": "RTX PRO 4000 Blackwell", "nvidia_smi_peak_mib": 5662}
