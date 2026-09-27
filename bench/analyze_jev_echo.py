@@ -7,10 +7,13 @@ An effect counts only if it beats Jev's own run-to-run noise:
             echo runs ("fixed"), or the reverse ("broke"); exact sign test on those.
 """
 import json
+import sys
 from math import comb
 
+PREFIX = sys.argv[1] if len(sys.argv) > 1 else "jev"      # dec -> dec-base-1 ... dec-echo-2
+
 load = lambda t: {r["task_id"]: r for r in map(json.loads, open(f"results/jevbench/{t}/results.jsonl"))}
-B1, B2, E1, E2 = (load(t) for t in ("jev-base-1", "jev-base-2", "jev-echo-1", "jev-echo-2"))
+B1, B2, E1, E2 = (load(f"{PREFIX}-{t}") for t in ("base-1", "base-2", "echo-1", "echo-2"))
 state_kind = {}
 tier = {}
 for f in ("original", "easy", "hard"):

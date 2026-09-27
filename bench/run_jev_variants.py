@@ -8,9 +8,11 @@ text would change two things at once -- and serve as a within-run noise control.
 
     uv run python bench/run_jev_variants.py --variant base --tag jev-base-1
     uv run python bench/run_jev_variants.py --variant echo --tag jev-echo-1
+    uv run python bench/run_jev_variants.py --variant echo --tag dec-echo-1 \
+        --endpoint http://127.0.0.1:8000 --model decider-4b        # any local TypeSafe server, no key
 
-Uses JevBench's own TypeSafeAdapter against OpenRouter; only build_request differs.
-The OpenRouter key is read from .env into this process only and never printed.
+Uses JevBench's own TypeSafeAdapter; only build_request differs. Against OpenRouter the
+key is read from .env into this process only and never printed; a local endpoint needs none.
 """
 import argparse, copy, json, os, shutil, sys, time
 sys.path.insert(0, "src")
@@ -55,21 +57,24 @@ def main():
     ap.add_argument("--tag", required=True)
     ap.add_argument("--model", default="typesafe/jev-1.13")
     ap.add_argument("--cap-usd", type=float, default=0.50)
+    ap.add_argument("--endpoint", default="https://openrouter.ai/api")
     a = ap.parse_args()
 
-    for line in open(".env"):                                   # key stays in this process
-        if line.strip() and not line.startswith("#") and "=" in line:
-            k, v = line.split("=", 1); os.environ.setdefault(k.strip(), v.strip())
-    if not os.environ.get("OPENROUTER_API_KEY"):
-        sys.exit("OPENROUTER_API_KEY not found in .env")
+    remote = "openrouter.ai" in a.endpoint
+    if remote:
+        for line in open(".env"):                               # key stays in this process
+            if line.strip() and not line.startswith("#") and "=" in line:
+                k, v = line.split("=", 1); os.environ.setdefault(k.strip(), v.strip())
+        if not os.environ.get("OPENROUTER_API_KEY"):
+            sys.exit("OPENROUTER_API_KEY not found in .env")
 
     tasks = [t for f in ("original", "easy", "hard") for t in load_jsonl(f"vendor/jevbench/datasets/public/{f}.jsonl")]
     out = f"results/jevbench/{a.tag}"; shutil.rmtree(out, ignore_errors=True); os.makedirs(out)
     raw = f"/tmp/jev-raw/{a.tag}"; shutil.rmtree(raw, ignore_errors=True)
     cls = EchoAdapter if a.variant == "echo" else TypeSafeAdapter
-    ad = cls(endpoint="https://openrouter.ai/api", model=a.model, key_env="OPENROUTER_API_KEY",
-             price_input_per_m=0.042, price_output_per_m=0.0)
-    print(f"[jev] variant={a.variant} model={a.model} tasks={len(tasks)}", flush=True)
+    ad = cls(endpoint=a.endpoint, model=a.model, key_env="OPENROUTER_API_KEY" if remote else "",
+             price_input_per_m=0.042 if remote else 0.0, price_output_per_m=0.0)
+    print(f"[variants] variant={a.variant} endpoint={a.endpoint} model={a.model} tasks={len(tasks)}", flush=True)
     runner = Runner(ad, Ledger(f"{out}/ledger.jsonl", cap_usd=a.cap_usd), raw_dir=raw, default_reserve_usd=0.0001)
     t0 = time.time()
     records = runner.run_all(tasks, progress_every=50, results_path=f"{out}/results.jsonl")
