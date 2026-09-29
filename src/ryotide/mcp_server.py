@@ -17,8 +17,10 @@ Auth (HTTP; required unless bound to loopback):
   RYOTIDE_MCP_TOKEN=<secret>   clients send 'Authorization: Bearer <secret>'; tool calls use
                                RYOTIDE_API_KEY (if any) towards the decision API.
   --forward-auth               clients send their own decision-API key; it is checked against the
-                               API (cached 60 s) and forwarded on every call, so the API's own keys,
-                               revocation and rate limits apply. The API must enforce keys.
+                               API on every request (GET /v1/auth when the API has it: no rate-limit
+                               token spent; else /health) and forwarded on every call, so the API's
+                               keys, revocation and rate limits apply at once. The API must enforce keys.
+  An unreachable or failing API answers 503, never lets a request through.
 
   RYOTIDE_URL      decision API base URL (default http://127.0.0.1:8778)
   RYOTIDE_API_KEY  bearer key for the API (stdio and token modes)
@@ -30,12 +32,10 @@ Auth (HTTP; required unless bound to loopback):
 from __future__ import annotations
 
 import argparse
-import hashlib
 import hmac
 import json
 import os
 import sys
-import time
 import urllib.error
 import urllib.request
 from typing import Any
@@ -214,10 +214,14 @@ def engine_info(ctx: Context | None = None) -> dict[str, Any]:
 # ---------------------------------------------------------------------------------------- HTTP auth
 
 class BearerGate:
-    """ASGI middleware: every HTTP request needs a valid 'Authorization: Bearer ...'."""
+    """ASGI middleware: every HTTP request needs a valid 'Authorization: Bearer ...'. No caching: a
+    revoked key is refused on its next request. If the key cannot be checked (API down), 503."""
+
+    MESSAGES = {401: "missing or invalid bearer token", 429: "rate limited",
+                503: "decision API unavailable; cannot check the key -- retry shortly"}
 
     def __init__(self, app, check):
-        self.app, self.check, self._ok = app, check, {}
+        self.app, self.check = app, check
 
     async def __call__(self, scope, receive, send):
         if scope["type"] != "http":
@@ -226,22 +230,21 @@ class BearerGate:
         status = self._verdict(header)
         if status == 200:
             return await self.app(scope, receive, send)
-        body = json.dumps({"error": "missing or invalid bearer token" if status == 401 else "rate limited"}).encode()
-        hdrs = [(b"content-type", b"application/json"), (b"www-authenticate", b'Bearer realm="ryotide"')]
+        hdrs = [(b"content-type", b"application/json")]
+        if status == 401:
+            hdrs.append((b"www-authenticate", b'Bearer realm="ryotide"'))
+        elif status in (429, 503):
+            hdrs.append((b"retry-after", b"5"))
         await send({"type": "http.response.start", "status": status, "headers": hdrs})
-        await send({"type": "http.response.body", "body": body})
+        await send({"type": "http.response.body", "body": json.dumps({"error": self.MESSAGES[status]}).encode()})
 
     def _verdict(self, header: str) -> int:
         if not header.startswith("Bearer ") or not header[7:].strip():
             return 401
-        key = hashlib.sha256(header.encode()).hexdigest()
-        hit = self._ok.get(key)
-        if hit and time.monotonic() - hit < 60:
-            return 200
-        status = self.check(header)
-        if status == 200:
-            self._ok[key] = time.monotonic()
-        return status
+        try:
+            return self.check(header)
+        except Exception:                # API unreachable or broken: fail closed, but say why
+            return 503
 
 
 def _static_check(header: str) -> int:
@@ -249,8 +252,12 @@ def _static_check(header: str) -> int:
 
 
 def _forward_check(header: str) -> int:
-    status, _ = _call("GET", "/health", auth=header)
-    return status if status in (200, 429) else 401
+    status, _ = _call("GET", "/v1/auth", auth=header)
+    if status == 404:                    # an API without /v1/auth: /health (spends a rate-limit token)
+        status, _ = _call("GET", "/health", auth=header)
+    if status in (200, 429):
+        return status
+    return 503 if status >= 500 else 401
 
 
 def _api_enforces_keys() -> bool:

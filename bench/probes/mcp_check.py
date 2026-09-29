@@ -6,7 +6,7 @@
 
 Starts the MCP server (Streamable HTTP with a random bearer token, then stdio), and checks:
 401 without / with a wrong token, the tool list, every tool with a real decision, review fields,
-and that bad input comes back as a tool error. The token is generated here and never printed.
+that bad input comes back as a tool error, and 503 (not a pass) when forward-auth cannot reach the API. The token is generated here and never printed.
 
     uv run bench/probes/mcp_check.py [API_URL]        # default http://127.0.0.1:8778
 """
@@ -116,6 +116,21 @@ def main():
         check("http: 401 without a token", status_of(url, {}) == 401)
         check("http: 401 with a wrong token", status_of(url, {"Authorization": "Bearer wrong"}) == 401)
         asyncio.run(http_run(token))
+    finally:
+        proc.terminate(); proc.wait(timeout=10)
+    # forward-auth with the decision API unreachable: refuse with 503, never let the request through
+    proc = subprocess.Popen([sys.executable, SERVER, "--port", str(PORT), "--forward-auth"],
+                            env={**os.environ, "RYOTIDE_URL": "http://127.0.0.1:9"}, stdout=subprocess.DEVNULL,
+                            stderr=subprocess.DEVNULL)
+    try:
+        for _ in range(60):
+            try:
+                urllib.request.urlopen(f"http://127.0.0.1:{PORT}/", timeout=1)
+            except urllib.error.HTTPError:
+                break
+            except Exception:
+                time.sleep(0.5)
+        check("http: forward-auth, API down -> 503", status_of(f"http://127.0.0.1:{PORT}/mcp", {"Authorization": "Bearer x"}) == 503)
     finally:
         proc.terminate(); proc.wait(timeout=10)
     asyncio.run(stdio_run())
