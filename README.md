@@ -224,7 +224,7 @@ order bias is a small-model pathology that fades with scale.
 intelligence against its own base model at matched quantisation and config.
 
 **Architecture loses to recency and training.** A 4B dense Gemma 4 (75.0) beats a
-20B MoE (64.8), an 8B Llama (54.7), a 9B Qwen (69.5) and an 8B Mistral (51.5).
+20B MoE (64.8), an 8B Llama (54.7) and an 8B Mistral (51.5).
 
 **Head-duplication surgery fails (negative result).** Duplicating the 14 query heads
 to 28 with a RoPE phase shift costs ~14 intelligence and doubles ECE. The phase

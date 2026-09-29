@@ -259,7 +259,7 @@ class MlxJevLocalAdapter:
                 m = sum(masses) / len(masses)
                 # Prefer the SHORTEST prefix among those statistically tied with
                 # the best: a longer one is prefilled on every decision for no
-                # gain. Qwen3.5-9B otherwise picks a 9-token harmony prefix when
+                # gain. Some models otherwise pick a 9-token harmony prefix when
                 # a 3-token one reads identically.
                 if m > best[2] + 0.01 or (m > best[2] - 0.01 and len(suf) < len(best[0])):
                     if m > best[2] - 0.01:
