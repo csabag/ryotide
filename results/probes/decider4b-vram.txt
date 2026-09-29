@@ -1,0 +1,10 @@
+Decider 4B v2.1 (Mapika/decider-4b @ eb5fbdf, decider-ai @ a5120cc), RTX PRO 4000 Blackwell (24 GB),
+bf16, FP8 off (as on Ampere), served by decider.serve, driven by JevBench's stock typesafe adapter.
+GPU memory from nvidia-smi (whole card, sampled every 1-2 s).
+
+default settings (89 CUDA graphs, batch up to 32):   OOM during warm-up at 23.3 GB; server did not start
+DECIDER_B_BUCKETS=1,2,4 GRAPH_TOKEN_BUDGET=8192 MAX_BATCH=4 SHARED_FORK_GB=2 (45 graphs):
+    idle 13,388 MiB, peak 14,876 MiB; public 192/231; p50 37 ms, p95 435 ms
+DECIDER_WARMUP=0 (eager) MAX_BATCH=4 SHARED_FORK_GB=1, PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True:
+    idle 8,308 MiB, peak 9,578 MiB; public 192/231, identical decisions on 231/231; p50 63 ms, p95 401 ms
+Only the short public items were measured; long inputs need more.
