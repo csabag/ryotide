@@ -106,6 +106,47 @@ with 99.1% per-item agreement -- which validates the whole harness.
 Jev is faster over the network than our models are on-device, and its p95/p50
 ratio is 1.5 against our 11-17. Measured cost is $0.00075/1k decisions.
 
+## Decision Index 0.2.1 (self-scored)
+
+The [Decision Index](https://github.com/apolinario/decision-index) runs an engine through 150,317
+`/v1/systemone` requests over ~40 public benchmarks and reports a chance-corrected index. We ran
+**RYOTIDE-Qwen v0.3.1** (the `ryotide-qwen` preset: frozen Qwen3.5-4B, no training) through the kit's
+stock `http` engine: **36.63** (balanced skill; raw 52.06, breadth 34.74), `complete: true`, 0 errors
+or unsupported requests. Jev 1.13 scores 57.91 on the same index.
+
+| area (skill) | knowledge | language | retrieval | tools | arts |
+|---|---|---|---|---|---|
+| RYOTIDE-Qwen v0.3.1 | 0.198 | 0.365 | 0.475 | 0.551 | 0.250 |
+
+On the board (edition 0.2.1, 71 rows) that is 30th overall and 10th of the 18 Qwen3.5-4B-based
+entries -- above several fine-tuned 4B engines (Kev 4B 34.64, Decision 1.0 Nox 34.36), below the best
+fine-tuned ones (JPT-4B 43.04, Jet v6.2 42.60, Decider 4B 40.70). Strong: BFCL 0.91, BPoMP 0.88,
+HellaSwag 0.87, CLINC150 0.81. Weak where one read cannot do multi-step work: GSM8K 0.34 (Jev 0.80),
+the home-appliance simulator 0.07 (Jev 0.52), HLE at chance.
+
+Run on one RTX PRO 6000, split over several server processes by `crc32(run_id)` and merged
+(`bench/decision_index/`); every request's text matched the suite's `payload_sha256`. Scores and
+environment: `results/decision-index/RYOTIDE-Qwen-v0.3.1/`; public results:
+[csabag76/decision-index-results](https://huggingface.co/datasets/csabag76/decision-index-results);
+submission: [apolinario/decision-index#28](https://github.com/apolinario/decision-index/pull/28).
+
+### Other checks on the public JevBench items
+
+All 231 public items, JevBench's stock `typesafe` adapter unless noted:
+
+| engine | correct | notes |
+|---|---|---|
+| RYOTIDE-Qwen preset, bf16 (CUDA) | 184 | reference |
+| RYOTIDE-Qwen preset, `--quant int8` | 181 | 5.7 GB peak, p50 382 ms; 225/231 identical decisions |
+| Qwen3.5-4B, MLX 8-bit (local runner) | 182 | ECE 0.044 |
+| Decider 4B v2.1 (Mapika), its own server | 192 | ECE 0.060; 9.6 GB without CUDA graphs |
+| CLM-v0.1-8B, its own server | 92 | ECE 0.374; 2,048-token input cap |
+
+The question echo (state, question, question again) helps frozen models but not engines trained on
+the format: on Decider 4B, base 192/192 against echo 190/190 over two interleaved run pairs (1 fixed,
+3 broken), the same null result as on Jev 1.13 (`bench/run_jev_variants.py --endpoint`,
+`bench/analyze_jev_echo.py dec`).
+
 ## GLUE, and the linguistic tasks
 
 The project started from a hypothesis that Jev would be weak on GLUE. It isn't.
