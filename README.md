@@ -355,6 +355,31 @@ peak, so it does not make Gemma fit a 12 GB card. **Windows / WSL2 + CUDA:** ste
 setup, commands and expected numbers in [`docs/WSL-CUDA.md`](docs/WSL-CUDA.md);
 `bench/compare_runs.py <reference> <new>` checks a run against ours.
 
+## MCP server: decisions as tools
+
+`src/ryotide/mcp_server.py` puts a running decision API behind the
+[Model Context Protocol](https://modelcontextprotocol.io), so an MCP client (Claude Code, Claude
+Desktop, an agent framework) can ask typed decisions as tools: `decide_choice`, `decide_yes_no`,
+`decide_score`, `decide_many` (several questions over one context, read once) and `engine_info`.
+Each returns the answer with calibrated probabilities; with `review_threshold` also `confidence` and
+`needs_review`. It is a thin client -- no model, only the MCP SDK, declared inline:
+
+```bash
+# Streamable HTTP at http://127.0.0.1:8889/mcp (loopback, no auth)
+RYOTIDE_URL=http://127.0.0.1:8778 uv run src/ryotide/mcp_server.py
+# beyond loopback a bearer token is required
+RYOTIDE_MCP_TOKEN=<secret> uv run src/ryotide/mcp_server.py --host 0.0.0.0
+# stdio, for a client that starts the server itself
+uv run src/ryotide/mcp_server.py --transport stdio
+
+claude mcp add --transport http ryotide http://127.0.0.1:8889/mcp          # Claude Code
+```
+
+The HTTP transport is stateless with plain JSON responses: a decision takes well under a second,
+so nothing streams, and reverse proxies that cut long connections are no problem. `--forward-auth`
+instead checks each client's own decision-API key against the API and forwards it, for an API that
+enforces keys. Check: `uv run bench/probes/mcp_check.py` (auth, every tool, both transports).
+
 ## v0.2: large menus and long inputs
 
 JevBench never offers more than 6 options, but other Jev-style suites do: the Jev
