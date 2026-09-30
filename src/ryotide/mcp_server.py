@@ -67,7 +67,9 @@ server = MCPServer("ryotide", instructions=INSTRUCTIONS)
 def _call(method: str, path: str, body: dict | None = None, auth: str | None = None) -> tuple[int, Any]:
     req = urllib.request.Request(API_URL + path, method=method,
                                  data=json.dumps(body).encode() if body is not None else None,
-                                 headers={"Content-Type": "application/json", "Accept": "application/json"})
+                                 # a User-Agent: Cloudflare-fronted proxies (RunPod) refuse Python's default with 403
+                                 headers={"Content-Type": "application/json", "Accept": "application/json",
+                                          "User-Agent": "ryotide-mcp/1"})
     if auth:
         req.add_header("Authorization", auth)
     try:
