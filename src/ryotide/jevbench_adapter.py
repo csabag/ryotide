@@ -30,6 +30,7 @@ from __future__ import annotations
 
 import json
 import math
+import os
 import time
 from typing import TYPE_CHECKING, Any, Sequence
 
@@ -475,12 +476,34 @@ class MlxJevLocalAdapter:
             return [self.run(t) for t in tasks]
         head = toks[0][:plen]
         cache = clf.extend(head) if self.backend == "torch" else clf.prefill(head)
-        results = [self.run(t, prefix=(cache, plen, head)) for t in tasks]
+        pre = self._batched_reads(clf, tasks, toks, cache, plen, head)
+        results = [self.run(t, prefix=(cache, plen, head), pre=pre[i]) for i, t in enumerate(tasks)]
         for i, r in enumerate(results):           # the state is read once: bill it once
             if r.ok and r.usage:
                 r.usage["input_tokens"] = r.usage["input_tokens"] - (plen if i else 0)
         del cache
         return results
+
+    def _batched_reads(self, clf, tasks, toks, cache, plen, head) -> list:
+        """torch: the questions' reads off the shared state in one batched forward pass
+        (TorchClassifier.read_batch) instead of one pass each; run() then applies exactly
+        the same post-processing. Questions read with codes (> 26 options) stay sequential.
+        RYOTIDE_NO_BATCH=1 turns this off (A/B checks)."""
+        pre = [None] * len(tasks)
+        if self.backend != "torch" or not hasattr(clf, "read_batch") or os.environ.get("RYOTIDE_NO_BATCH") == "1":
+            return pre
+        idx, sufs, mids = [], [], []
+        for i, (t, tk) in enumerate(zip(tasks, toks)):
+            n = len(t.labels)
+            use_idk = self._idk_active(t)
+            if self._uses_codes(n + (1 if use_idk else 0)) or tk[:plen] != head:
+                continue
+            idx.append(i); sufs.append(tk[plen:])
+            mids.append(self._letters(n + 1) if use_idk else self._letters(n))
+        if len(idx) > 1:
+            for i, r in zip(idx, clf.read_batch(sufs, mids, cache, plen)):
+                pre[i] = r
+        return pre
 
     def _idk_active(self, task) -> bool:
         """Add the escape hatch only where the task does not already have one."""
@@ -521,9 +544,10 @@ class MlxJevLocalAdapter:
 
     # -- the decision ------------------------------------------------------
 
-    def run(self, task, prefix=None):
+    def run(self, task, prefix=None, pre=None):
         """One decision. `prefix` = (cache, n_tokens) of a state already read by
-        run_many: this question then only processes its own tokens."""
+        run_many: this question then only processes its own tokens. `pre` = its
+        (probs, mass) already read in run_many's batched pass (torch)."""
         from jevbench.adapters.base import DecisionResult  # harness type
 
         res = DecisionResult(adapter=self.name, ok=False,
@@ -576,7 +600,7 @@ class MlxJevLocalAdapter:
                 elif prefix is not None:
                     pcache, plen = prefix[0], prefix[1]
                     if self.backend == "torch":
-                        p, mass = clf.read(toks[plen:], read, cache=pcache)
+                        p, mass = pre if pre is not None else clf.read(toks[plen:], read, cache=pcache)
                     else:
                         from .branch import fork_cache as _fork
                         p, mass = self._read(toks[plen:], read, cache=_fork(pcache))

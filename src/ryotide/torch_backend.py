@@ -209,6 +209,71 @@ class TorchClassifier:
                 del cache
         return p_group, full_group, p_digits, mass_digits
 
+    # Batched reads off one shared prefix (several questions about the same state).
+    BATCH_TOKENS = 4096            # padded suffix tokens per batched forward (questions x longest)
+    BATCH_PREFIX_TOKENS = 65536    # prefix tokens held across the batch's cache copies
+
+    def _repeat_cache(self, cache, n: int) -> None:
+        """Repeat a batch-1 cache n times along the batch dimension. transformers'
+        batch_repeat_interleave covers attention layers but not linear-attention ones
+        (Qwen3.5's gated delta layers keep conv and recurrent states), so both are done here."""
+        torch = self.torch
+        for layer in getattr(cache, "layers", []):
+            for name in ("conv_states", "recurrent_states"):
+                states = getattr(layer, name, None)
+                items = states.items() if isinstance(states, dict) else enumerate(states or [])
+                for k, v in list(items):
+                    if isinstance(v, torch.Tensor):
+                        states[k] = v.repeat_interleave(n, dim=0)
+            if hasattr(layer, "keys") and callable(getattr(layer, "batch_repeat_interleave", None)):
+                layer.batch_repeat_interleave(n)
+
+    def read_batch(self, suffixes: Sequence[Sequence[int]], marker_ids: Sequence[Sequence[int]],
+                   cache, prefix_tokens: int) -> list[tuple[list[float], float]]:
+        """Several reads that branch off one shared-prefix `cache`, in as few forward passes
+        as the budgets allow; the same result as calling read(suffix, ids, cache) for each.
+
+        The suffixes are right-padded into one batch over copies of the prefix cache. That
+        is exact without an attention mask: the model is causal, so a question's last real
+        token never sees the padding after it (attention and recurrent layers alike), and
+        its logits are read there. Groups respect BATCH_TOKENS (padded tokens) and
+        BATCH_PREFIX_TOKENS (cache copies); a suffix that fits no group runs on its own
+        through read() (chunked). Returns [(probs over the markers, marker mass)] in order."""
+        torch = self.torch
+        import copy as _copy
+        dev = self._input_device()
+        tok = self.tokenizer
+        pad = tok.pad_token_id if tok.pad_token_id is not None else (tok.eos_token_id or 0)
+        max_b = max(1, self.BATCH_PREFIX_TOKENS // max(1, prefix_tokens))
+        order = sorted(range(len(suffixes)), key=lambda i: len(suffixes[i]))
+        groups, cur = [], []
+        for i in order:                       # ascending length: the newcomer is the longest
+            if cur and ((len(cur) + 1) * len(suffixes[i]) > self.BATCH_TOKENS or len(cur) >= max_b):
+                groups.append(cur); cur = []
+            cur.append(i)
+        if cur:
+            groups.append(cur)
+        out: list = [None] * len(suffixes)
+        for g in groups:
+            if len(g) == 1:
+                out[g[0]] = self.read(suffixes[g[0]], marker_ids[g[0]], cache=cache)
+                continue
+            longest = max(len(suffixes[i]) for i in g)
+            ids = torch.tensor([list(suffixes[i]) + [pad] * (longest - len(suffixes[i])) for i in g], device=dev)
+            last = sorted({len(suffixes[i]) - 1 for i in g})
+            with torch.inference_mode():
+                c = _copy.deepcopy(cache)
+                self._repeat_cache(c, len(g))
+                logits = self.model(input_ids=ids, past_key_values=c, use_cache=True,
+                                    logits_to_keep=torch.tensor(last, device=dev)).logits
+                del c
+                for b, i in enumerate(g):
+                    row = logits[b, last.index(len(suffixes[i]) - 1)].float()
+                    sel = torch.tensor(list(marker_ids[i]), device=row.device)
+                    out[i] = (torch.softmax(row[sel], -1).tolist(), float(torch.softmax(row, -1)[sel].sum()))
+                del logits
+        return out
+
     def read(self, tokens: Sequence[int], marker_ids: Sequence[int], cache=None) -> tuple[list[float], float]:
         """One forward pass; the next-token distribution at the LAST position.
 
