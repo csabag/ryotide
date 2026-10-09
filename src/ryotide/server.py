@@ -58,6 +58,8 @@ PRESETS = {
                           revision="ee0ef6023621cff504d758262d4e04895a5af4a2", temperature=1.924),
     "ryotide-qwen": dict(backend="torch", model="Qwen/Qwen3.5-4B",
                          revision="851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a", temperature=1.0),
+    "ryotide-qwen9": dict(backend="torch", model="Qwen/Qwen3.5-9B",
+                          revision="c202236235762e1c871ad0ccb60c8ee5ba337b9a", temperature=0.667),
 }
 
 

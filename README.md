@@ -20,9 +20,9 @@ published board.
 
 **Dashboard:** https://claude.ai/artifact/MZuHA6zN1gFucrGaPRyf8t
 
-## The two entries
+## The entries
 
-Both are frozen public models, read in one forward pass, with no generated tokens:
+All are frozen public models, read in one forward pass, with no generated tokens:
 the question is asked after the state and echoed once (S/Q/Q), the answer is read as
 the next-token distribution over the option markers after `Answer: **`, masked and
 renormalised. Nothing is trained. Each entry is one pinned preset.
@@ -37,6 +37,19 @@ up to 26 options its decisions are unchanged.
 | **RYOTIDE-Qwen** | `Qwen/Qwen3.5-4B` (`851bf6e8`), Apache-2.0 | 1.0 | 184/231 (0.797) | 0.658 | 0.076 |
 | **RYOTIDE-Gemma** | `google/gemma-4-E4B-it` (`ee0ef602`), Apache-2.0 | 1.924 | 185/231 (0.801) | 0.613 | 0.189 |
 
+**RYOTIDE-Qwen9** (`--preset ryotide-qwen9`, added in v0.4.0): the same engine and prompt frame
+on the larger frozen base, still with nothing trained.
+
+| entry | weights (revision) | temperature | public 231, via the wire | hard | hard ECE |
+|---|---|---|---|---|---|
+| **RYOTIDE-Qwen9** | `Qwen/Qwen3.5-9B` (`c2022362`), Apache-2.0 | 0.667 | 192/231 (0.831) | 0.703 | 0.074 |
+
+Measured on CUDA (RTX PRO 4000 Blackwell 24 GB, bf16, peak 18.6 GB) through the stock
+`typesafe` adapter, all 231 answered, p50 124 ms (a slower card than the 4B runs). The 9B
+is underconfident at T = 1; the same pre-registered fit on the synthetic set gave T = 0.667
+(held-out ECE 0.074 → 0.047, adopted; `results/calibration/fit-qwen9.txt`). Needs a 24 GB
+GPU in bf16 (22.3 GB peak at a 62k-token input). `/health` prompt hash `129405e35ccd`.
+
 Measured on CUDA (RTX PRO 6000 Blackwell, bf16) through JevBench's stock `typesafe`
 adapter, all 231 answered, ~60 ms median per decision. The temperature was fit on the
 synthetic typed-decision set and adopted only when it improved held-out calibration
@@ -46,7 +59,7 @@ changing a single decision, and was rejected for Qwen, which is already calibrat
 ```bash
 docker build -t ryotide .
 docker run --gpus all -p 127.0.0.1:8778:8778 -v ryotide-hf:/root/.cache/huggingface \
-  ryotide --preset ryotide-qwen          # or --preset ryotide-gemma
+  ryotide --preset ryotide-qwen          # or --preset ryotide-gemma / ryotide-qwen9
 # without Docker:
 uv sync --extra cuda && PYTHONPATH=src uv run python -m ryotide.server --preset ryotide-qwen
 ```
