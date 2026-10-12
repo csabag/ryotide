@@ -60,6 +60,13 @@ PRESETS = {
                          revision="851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a", temperature=1.0),
     "ryotide-qwen9": dict(backend="torch", model="Qwen/Qwen3.5-9B",
                           revision="c202236235762e1c871ad0ccb60c8ee5ba337b9a", temperature=0.667),
+    # Multi-question requests about one case: all of the request's questions lead, the
+    # case is read once, no echo. T 1.208 fit on echo-v1 in this layout (held-out ECE
+    # 0.090 -> 0.070). Undecided yes/no lifted to 0.8 (the board counts a yes/no only
+    # at >= 0.8 / <= 0.2). Public JevBench 189/231 (v0.4.0 preset: 192).
+    "ryotide-qwen9-qf": dict(backend="torch", model="Qwen/Qwen3.5-9B",
+                             revision="c202236235762e1c871ad0ccb60c8ee5ba337b9a", temperature=1.208,
+                             repeat=1, question_first=True, noul_floor=0.8),
 }
 
 
@@ -145,7 +152,10 @@ class Engine:
             endpoint=a.model, orders=a.orders, repeat=a.repeat,
             pin_prefix=a.prefix, pin_marker=a.marker, backend=a.backend,
             device=a.device, revision=a.revision, quant=a.quant, low_vram=a.low_vram,
-            temperature=a.temperature)
+            temperature=a.temperature, noul_floor=a.noul_floor,
+            question_first=a.question_first,
+            echo_max_options=a.echo_max_options, echo_max_chars=a.echo_max_chars,
+            echo_over_limit=a.echo_over_limit)
         self.preset = a.preset
         self.backend = a.backend
         self.revision = a.revision
@@ -157,6 +167,13 @@ class Engine:
                        "layout": "state / question / question (echo always)",
                        "temperature": a.temperature, "option_order": a.option_order,
                        "markers": "letters A-Z up to 26 options; codes A0-Z9 (two-step read) above"}
+        if a.noul_floor:                             # only when set: older configs keep their hash
+            self.config["noul_floor"] = a.noul_floor
+        if a.question_first:
+            self.config["layout"] = "questions / state / question" + " / question" * (a.repeat - 1)
+        if a.echo_max_options is not None or a.echo_max_chars is not None:
+            self.config["echo_limits"] = {"max_options": a.echo_max_options, "max_chars": a.echo_max_chars,
+                                          "over_limit": a.echo_over_limit}
         self.prompt_hash = hashlib.sha256(json.dumps(self.config, sort_keys=True)
                                           .encode()).hexdigest()[:12]
 
@@ -237,9 +254,20 @@ def main() -> None:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=8778)
     ap.add_argument("--orders", type=int, default=1)
-    ap.add_argument("--repeat", type=int, default=2)
+    ap.add_argument("--repeat", type=int, default=None, help="emit the question N times after the state (default 2)")
     ap.add_argument("--prefix", default="Answer: **")
     ap.add_argument("--marker", default="{}")
+    ap.add_argument("--echo-max-options", type=int, default=None,
+                    help="echo the question only for menus of at most this many options")
+    ap.add_argument("--echo-max-chars", type=int, default=None,
+                    help="echo the question only when its text is at most this many characters")
+    ap.add_argument("--echo-over-limit", choices=("none", "stem"), default="none",
+                    help="menus over --echo-max-options: no echo, or echo the question without its options")
+    ap.add_argument("--question-first", action="store_true", default=None,
+                    help="also put the request's questions before the state, so the state is read knowing "
+                         "them; with several questions the questions + state prefix is shared (read once)")
+    ap.add_argument("--noul-floor", type=float, default=None,
+                    help="yes/no: lift undecided answers to this confidence on the preferred side")
     ap.add_argument("--option-order", choices=("natural", "received"), default="natural",
                     help="choice options: canonical natural sort (default) or as received")
     a = ap.parse_args()
@@ -248,6 +276,8 @@ def main() -> None:
     for k, v in base.items():
         if getattr(a, k, None) is None:
             setattr(a, k, v)
+    a.repeat = 2 if a.repeat is None else a.repeat
+    a.question_first = bool(a.question_first)
 
     engine = Engine(a)
     t0 = time.perf_counter()

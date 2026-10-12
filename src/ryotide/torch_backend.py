@@ -24,6 +24,8 @@ Memory options, for GPUs smaller than the bf16 model (Gemma 4 E4B is ~16 GB):
 """
 from __future__ import annotations
 
+import os
+
 from typing import Sequence
 
 # Modules worth keeping off the GPU. Names are matched as prefixes of the model's
@@ -62,6 +64,10 @@ class TorchClassifier:
         self.tokenizer = AutoTokenizer.from_pretrained(model_id, revision=revision)
 
         kwargs = {"revision": revision, "dtype": self.dtype}
+        if os.environ.get("RYOTIDE_USE_KERNELS") == "1":
+            # opt-in: let transformers swap in Hub kernels (e.g. kernels-community/causal-conv1d for the
+            # Qwen3.5/3.8 linear-attention layers) instead of its PyTorch reference fallbacks
+            kwargs["use_kernels"] = True
         if quant:
             if not self.device.startswith("cuda"):
                 raise ValueError(f"--quant {quant} needs CUDA (bitsandbytes); device is {self.device}")
@@ -73,9 +79,16 @@ class TorchClassifier:
                 BitsAndBytesConfig(load_in_8bit=True, **offload) if quant == "int8" else
                 BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                                    bnb_4bit_compute_dtype=self.dtype, **offload))
+        prequantized = getattr(AutoConfig.from_pretrained(model_id, revision=revision), "quantization_config", None)
         if quant or low_vram:
             kwargs["device_map"] = self._device_map(AutoConfig, AutoModelForCausalLM, model_id, revision)
             self.model = AutoModelForCausalLM.from_pretrained(model_id, **kwargs).eval()
+        elif prequantized:
+            # A pre-quantized checkpoint (e.g. FP8) must load straight onto the GPU: loaded on
+            # the CPU and moved, transformers keeps the CPU path and the FP8 kernels never run.
+            kwargs["device_map"] = {"": self.device}
+            self.model = AutoModelForCausalLM.from_pretrained(model_id, **kwargs).eval()
+            self._fix_unscaled_fp8(model_id, revision, prequantized)
         else:
             self.model = AutoModelForCausalLM.from_pretrained(model_id, **kwargs).to(self.device).eval()
         self.offloaded = sorted({k for k, v in (getattr(self.model, "hf_device_map", None) or {}).items()
@@ -83,6 +96,41 @@ class TorchClassifier:
         self.cpu_lookups = []
         if low_vram:
             self._run_embeddings_on_cpu(model_id, revision)
+
+    def _fix_unscaled_fp8(self, model_id, revision, qcfg) -> None:
+        """Repair linear layers that transformers loaded with raw FP8 weights and no scales.
+
+        transformers 5.17 skips `mlp.gate_proj` when it converts Qwen3.5/3.8 FP8 checkpoints
+        (load report: gate_proj.weight_scale_inv UNEXPECTED), leaving a plain nn.Linear with
+        float8 weights that fails at the first matmul. For each such layer, read its block
+        scales from the checkpoint and dequantize it once to the model dtype (weight * scale
+        per 128x128 block); these layers then cost 2 bytes per weight instead of 1."""
+        import json
+        torch = self.torch
+        f8 = getattr(torch, "float8_e4m3fn", None)
+        bad = [(n, m) for n, m in self.model.named_modules()
+               if type(m) is torch.nn.Linear and f8 is not None and m.weight.dtype == f8]
+        if not bad:
+            return
+        from huggingface_hub import snapshot_download
+        from safetensors import safe_open
+        q = qcfg if isinstance(qcfg, dict) else qcfg.to_dict()
+        bo, bi = q.get("weight_block_size") or (128, 128)
+        root = snapshot_download(model_id, revision=revision, allow_patterns=["*.json"])
+        wmap = json.load(open(f"{root}/model.safetensors.index.json"))["weight_map"]
+        by_tail = {k.split("layers.", 1)[-1]: k for k in wmap if k.endswith(".weight_scale_inv")}
+        dtype = self.dtype
+        for name, mod in bad:
+            key = by_tail[name.split("layers.", 1)[-1] + ".weight_scale_inv"]
+            path = snapshot_download(model_id, revision=revision, allow_patterns=[wmap[key]])
+            with safe_open(f"{path}/{wmap[key]}", "pt", device=str(mod.weight.device)) as f:
+                s = f.get_tensor(key).to(torch.float32)
+            w = mod.weight.data
+            s = s.repeat_interleave(bo, 0)[: w.shape[0]].repeat_interleave(bi, 1)[:, : w.shape[1]]
+            # dequantize once, layer by layer: ~2x the FP8 size of these layers in VRAM, no per-pass cost
+            mod.weight = torch.nn.Parameter((w.to(torch.float32) * s).to(dtype), requires_grad=False)
+            del w, s
+        self.fp8_repaired = len(bad)
 
     # accelerate treats "cpu" in a device map as offloaded STORAGE: the weights are
     # copied to the GPU to execute. For a 5.6 GB embedding table that means a 5.6 GB

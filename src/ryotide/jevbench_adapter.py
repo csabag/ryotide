@@ -56,18 +56,32 @@ def _state_text(state: Any) -> str:
     return json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True)
 
 
+def _criterion_text(c) -> str | None:
+    """One rubric entry as text. TypeSafe also allows objects such as {"what": ..., "not_for": ...};
+    render those as 'what (not for: ...)' plus any other keys -- never as a Python dict.
+    Plain strings pass through untouched, so string rubrics (and their prompts) are unchanged."""
+    if c is None or isinstance(c, str):
+        return c
+    if isinstance(c, dict):
+        main = c.get("what") or c.get("description") or c.get("text") or ""
+        extra = [f"not for: {c['not_for']}"] if c.get("not_for") else []
+        extra += [f"{k}: {v}" for k, v in c.items() if k not in ("what", "description", "text", "not_for") and v]
+        return (main + (f" ({'; '.join(extra)})" if extra else "")).strip() or None
+    return json.dumps(c, ensure_ascii=False)
+
+
 def _criterion_for(task_question: dict, label: str, index: int) -> str | None:
     """Pull the rubric line for one label, across all three question types."""
     crit = task_question.get("criteria")
     if crit is None:
         return None
     if isinstance(crit, list):              # score: one line per level, in order
-        return crit[index] if index < len(crit) else None
+        return _criterion_text(crit[index]) if index < len(crit) else None
     if isinstance(crit, dict):
         if label in crit:                   # choice: keyed by label
-            return crit[label]
+            return _criterion_text(crit[label])
         # noul: keyed "true"/"false" rather than "yes"/"no"
-        return crit.get({"yes": "true", "no": "false"}.get(label, label))
+        return _criterion_text(crit.get({"yes": "true", "no": "false"}.get(label, label)))
     return None
 
 
@@ -124,6 +138,10 @@ class MlxJevLocalAdapter:
         backend: str = "mlx",            # "mlx" (reference) or "torch" (CUDA / MPS / CPU)
         device: str | None = None,       # torch only; default: cuda > mps > cpu
         echo_min_options: int = 0,       # echo only when there are MORE options than this
+        echo_max_options: int | None = None,  # ... and only up to this many options (None: no limit)
+        echo_max_chars: int | None = None,    # ... and only when the question text is at most this long
+        echo_over_limit: str = "none",   # menus over echo_max_options: "none" (no echo) or "stem"
+                                         # (echo the question and reply instruction, not the option list)
                                          # (0 = always; see bench/synthetic/PREREGISTRATION.md)
         quant: str | None = None,        # torch only: "int8" | "nf4" (bitsandbytes, CUDA)
         low_vram: bool = False,          # torch only: keep embeddings / unused towers on CPU
@@ -133,6 +151,9 @@ class MlxJevLocalAdapter:
                                          # letter then digit -- exact) or "grouped" (repeated letters
                                          # A A B B, pick likeliest groups, re-ask them with letters)
         group_size: int | None = None,   # grouped reader: options per group (default ceil(n/26))
+        noul_floor: float | None = None, # yes/no only: lift an undecided answer to this confidence
+                                         # on the side the model prefers (e.g. 0.8; JevBench v1.6
+                                         # counts a yes/no answer only at P >= 0.8 either way)
     ):
         # `endpoint` carries the model id/path, matching the other local adapters.
         self.path = endpoint or model or "mlx-community/Qwen2.5-1.5B-Instruct-4bit"
@@ -150,6 +171,11 @@ class MlxJevLocalAdapter:
         self.idk_first = idk_first
         self.repeat = max(1, int(repeat))
         self.repeat_min_options = echo_min_options   # repeat only if MORE than this many options
+        self.echo_max_options = echo_max_options
+        self.echo_max_chars = echo_max_chars
+        if echo_over_limit not in ("none", "stem"):
+            raise ValueError(f"echo_over_limit must be 'none' or 'stem', got {echo_over_limit!r}")
+        self.echo_over_limit = echo_over_limit
         self.instruction = instruction or DEFAULT_INSTRUCTION
         self.question_first = question_first
         # Single letters up to 26 options (A-Z are single tokens in the tokenizers we
@@ -172,6 +198,9 @@ class MlxJevLocalAdapter:
             raise ValueError(f"unknown code_reader {code_reader!r}")
         self.code_reader = code_reader
         self.group_size = group_size
+        if noul_floor is not None and not 0.5 < noul_floor < 1:
+            raise ValueError("noul_floor must be between 0.5 and 1")
+        self.noul_floor = noul_floor
         self._clf: Classifier | None = None
         self._letter_ids: dict[int, list[int]] = {}
         self._suffix: str | None = None      # chosen by _calibrate_read_position
@@ -415,7 +444,7 @@ class MlxJevLocalAdapter:
     # -- prompt ------------------------------------------------------------
 
     def _prompt(self, task, order: Sequence[int], group_size: int | None = None,
-                letters_only: bool = False) -> str:
+                letters_only: bool = False, _part: str | None = None) -> str:
         q = task.question
         idk = self._idk_active(task)
         # Slot 0 when idk_first, else the final slot. Position is load-bearing:
@@ -454,8 +483,14 @@ class MlxJevLocalAdapter:
         # included. So it is applied to every question by default
         # (repeat_min_options = 0); the old "> 2 options" gate had support only on
         # the public benchmark items and is kept as an option, not the default.
-        if self.repeat > 1 and len(task.labels) > self.repeat_min_options:
+        if self._echoes(task, body):
             body = ("\n\n".join([body] * self.repeat))
+        elif self._stem_echo(task, body):
+            # big menu: the option list stays once; only the question and the reply
+            # instruction come again after it, where the answer is read
+            body = body + "\n\n" + f"{q['instructions']}\n\n" + (CODE_INSTRUCTION if codes else self.instruction)
+        if _part == "body":
+            return body
         state = _state_text(task.state)
         # Under causal attention the state is encoded having never seen the
         # question: every state token attends only backwards. A leading copy of
@@ -464,7 +499,11 @@ class MlxJevLocalAdapter:
         # the OPTIONS mutually visible). The state is still emitted once -- it
         # is the expensive part -- so Q/state/Q costs the same as state/Q/Q.
         if self.question_first:
-            return body + "\n\n" + state + "\n\n" + body
+            # In a multi-question request every question leads with ALL of the request's
+            # questions (run_many sets _lead), so the questions + state prefix is identical
+            # across them and is read once; a single question keeps Q / state / Q.
+            lead = getattr(self, "_lead", None) or body
+            return lead + "\n\n" + state + "\n\n" + body
         return state + "\n\n" + body
 
     MIN_SHARED_PREFIX = 32      # below this, sharing saves nothing worth the bookkeeping
@@ -481,6 +520,15 @@ class MlxJevLocalAdapter:
             return [self.run(t) for t in tasks]
         clf = self.load()
         self._calibrate_read_position(tasks[0])
+        self._lead = None
+        if self.question_first:
+            self._lead = "\n\n".join(self._prompt(t, list(range(len(t.labels))), _part="body") for t in tasks)
+        try:
+            return self._run_shared(clf, tasks)
+        finally:
+            self._lead = None
+
+    def _run_shared(self, clf, tasks):
         toks = [self._tokens(self._prompt(t, list(range(len(t.labels))))) for t in tasks]
         plen, shortest = 0, min(len(t) for t in toks)
         while plen < shortest and len({t[plen] for t in toks}) == 1:
@@ -644,6 +692,9 @@ class MlxJevLocalAdapter:
 
             total = sum(totals) or 1.0
             probs = {task.labels[i]: totals[i] / total for i in range(n)}
+            if (task.question.get("type") == "noul" and set(probs) == {"yes", "no"}
+                    and self.noul_floor):
+                probs = self._noul_floored(probs)
         except Exception as e:
             res.latency_s = time.perf_counter() - t0
             res.error = f"{type(e).__name__}: {str(e)[:300]}"
@@ -670,10 +721,11 @@ class MlxJevLocalAdapter:
                 "idk_prob": (round(sum(idk_probs) / len(idk_probs), 5)
                              if idk_probs else None),
                 "idk_position": ("first" if self.idk_first else "last") if use_idk else None,
-                "question_repeats": (self.repeat if len(task.labels) > self.repeat_min_options else 1),
+                "question_repeats": (self.repeat if self._echoes(task) else 1),
                 "question_first": self.question_first,
                 "quant": self.quant,
                 "temperature": self.temperature,
+                "noul_floor": self.noul_floor,
                 "markers": ({"grouped": "grouped letters A A B B, then letters",
                               "digits": "codes A0-Z9 (two-step read)"}[self.code_reader] if codes else "letters"),
                 "low_vram_offloaded": getattr(clf, "offloaded", None),
@@ -686,6 +738,38 @@ class MlxJevLocalAdapter:
             },
         }
         return res
+
+    def _noul_floored(self, probs: dict) -> dict:
+        """Yes/no: an answer less confident than `noul_floor` is lifted to exactly that
+        confidence on the side the model already prefers. It never changes the chosen
+        side, only commits to it; confident answers are untouched."""
+        py, f = probs["yes"], self.noul_floor
+        if 1 - f < py < f:
+            py = f if py >= 0.5 else 1 - f
+        return {"yes": py, "no": 1 - py}
+
+    def _echoes(self, task, body: str | None = None) -> bool:
+        """Whether this question is emitted twice. The echo costs the question's tokens again,
+        so it can be limited to menus of at most `echo_max_options` options and to question
+        texts of at most `echo_max_chars` characters (big menus and retrieval candidates)."""
+        n = len(task.labels)
+        if self.repeat <= 1 or n <= self.repeat_min_options:
+            return False
+        if self.echo_max_options is not None and n > self.echo_max_options:
+            return False
+        if self.echo_max_chars is not None and body is not None and len(body) > self.echo_max_chars:
+            return False
+        return True
+
+    def _stem_echo(self, task, body: str) -> bool:
+        """Big menus with echo_over_limit='stem': echo the question without its options,
+        unless the question text itself is over echo_max_chars (then nothing is echoed)."""
+        if self.echo_over_limit != "stem" or self.repeat <= 1 or self.echo_max_options is None:
+            return False
+        if len(task.labels) <= self.echo_max_options:
+            return False
+        q = task.question.get("instructions", "")
+        return self.echo_max_chars is None or len(str(q)) <= self.echo_max_chars
 
     def reserve_estimate(self, task) -> float:
         return 0.0

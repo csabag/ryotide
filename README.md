@@ -500,6 +500,55 @@ Index's questions. String instructions are untouched, so the prompt hashes are u
 empty states, noul questions, a 30k-token state); Qwen on CUDA answers all twelve, the
 largest in 27 s.
 
+## v0.4.1: decisive yes/no, and questions first
+
+**Yes/no floor (`--noul-floor 0.8`).** JevBench v1.6 credits a yes/no answer only when
+P(yes) ≥ 0.8 or ≤ 0.2; anything in between scores as wrong. A calibrated engine is often
+honestly undecided there. The floor lifts an undecided answer to 0.8 on the side it already
+prefers: no decision changes, only how firmly it is stated. On `decide-v1` (480 synthetic
+typed decisions, `bench/synthetic/gen_decisive_tasks.py`, 360 of them yes/no) scored under
+that rule (`bench/calibration/noul_compare.py`, chance-corrected, 0 = coin flip):
+
+| yes/no, decide-v1 (360) | accuracy | decisive | score under the 0.8 rule | ECE |
+|---|---|---|---|---|
+| RYOTIDE-Qwen9, as is | 73.9% | 40% | −28.9 | 0.042 |
+| RYOTIDE-Qwen9, floor 0.8 | 73.9% | 100% | **+47.8** | 0.102 |
+| RYOTIDE-Gemma, as is | 77.8% | 59% | +6.7 | 0.050 |
+| RYOTIDE-Gemma, floor 0.8 | 77.8% | 100% | **+55.6** | 0.101 |
+
+The price is calibration: an answer the model holds at 0.6 is reported at 0.8. Use the
+floor where the consumer thresholds at 0.8; leave it off where the probability itself is
+used (review thresholds, expected-value decisions). Recounting the saved public run of the
+v0.4.0 preset under the same rule: 178/231 as served, 192/231 with the floor. The
+existing presets are unchanged (same prompt hashes); the floor is opt-in.
+
+**Questions first (`--question-first`).** Under causal attention the state is read before
+the question, so its tokens never see what will be asked. With `--question-first` the
+request's questions are placed before the state as well; with several questions all of
+them lead, so the questions + state prefix is identical across them and is read once
+(v0.3's shared prefix), and each question then costs only its own tokens. It pays off on
+requests that ask several questions about one case. New preset:
+
+| preset | layout | temperature | yes/no floor | public 231 | `/health` hash |
+|---|---|---|---|---|---|
+| `ryotide-qwen9` (v0.4.0, unchanged) | state / question / question | 0.667 | – | 192/231 | `129405e35ccd` |
+| **`ryotide-qwen9-qf`** | questions / state / question (no echo) | 1.208 | 0.8 | 189/231 | `8f896f7ca2b8` |
+
+The temperature was fit in the new layout on the synthetic set with the same
+pre-registered rule (held-out ECE 0.090 → 0.070, adopted; `results/calibration/qwen9-qf-fit.txt`);
+without the echo the model is slightly overconfident, so T now softens instead of
+sharpening. Public JevBench items mostly ask one question, so the layout is level there
+(189 vs 192; 13 items gained, 16 lost: `results/jevbench/pub-qwen9-qf1-t1`, T = 1, scored
+by argmax). On a private set of 2,670 real multi-question business cases (not ours to
+publish), on one RTX 3090, the same 9B went from 74.5% to 89.1% correct, median latency
+882 → 694 ms, 0.07% of requests over one second.
+
+**Also in v0.4.1:** `--echo-max-options`, `--echo-max-chars`, `--echo-over-limit {none,stem}`
+bound the echo on very long menus or questions; criterion objects (`{"what", "not_for"}`)
+render as text; pre-quantized checkpoints load straight onto the GPU, and FP8 layers that
+transformers leaves unscaled are dequantized once at load (Qwen3.8-27B-FP8: 644 → 206 ms
+per decision on an L40S).
+
 ## Running
 
 ```bash

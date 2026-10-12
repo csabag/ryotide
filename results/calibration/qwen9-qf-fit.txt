@@ -1,0 +1,9 @@
+fitted on echo-v1-qwen9-qf1-t1: 300 items (even scenarios);  T = 1.208
+set                                   n   NLL T=1    NLL T   ECE T=1   ECE T
+echo-v1-qwen9-qf1-t1 (fit half)     300     0.775    0.768     0.062   0.055
+echo-v1-qwen9-qf1-t1 (check half)   300     0.839    0.825     0.090   0.070
+pub-qwen9-qf1-t1                    231     0.492    0.522     0.060   0.103   (report only)
+pub-qwen9-qf1-t1 [hard]             111     0.808    0.804     0.057   0.090   (report only)
+
+decision: check-half ECE 0.090 -> 0.070: ADOPT the fitted T
+T = 1.208
